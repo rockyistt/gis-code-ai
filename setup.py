@@ -43,9 +43,10 @@ setup(
             "mypy>=1.4.0",
         ],
     },
-    entry_points={
-        "console_scripts": [
-            "gis-code-ai=src.main:main",
-        ],
-    },
+    # 如果需要命令行工具，取消注释以下代码并创建 src/main.py
+    # entry_points={
+    #     "console_scripts": [
+    #         "gis-code-ai=src.main:main",
+    #     ],
+    # },
 )
