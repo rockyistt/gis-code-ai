@@ -1,0 +1,29 @@
+# Core dependencies
+openai>=1.0.0
+dashscope>=1.14.0
+
+# Data processing
+pyyaml>=6.0
+tqdm>=4.65.0
+
+# Training dependencies
+transformers>=4.40.0
+peft>=0.10.0
+torch>=2.0.0
+datasets>=2.18.0
+accelerate>=0.27.0
+bitsandbytes>=0.43.0
+sentencepiece>=0.2.0
+
+# Optional: Monitoring
+# tensorboard>=2.15.0
+# wandb>=0.16.0
+
+# Optional: GIS (uncomment if needed)
+# geopandas>=0.14.0
+# rasterio>=1.3.6
+# shapely>=2.0.1
+# fiona>=1.9.4
+# pyproj>=3.6.0
+# scikit-learn>=1.2.0
+# sentence-transformers>=2.2.2

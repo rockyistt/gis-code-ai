@@ -1,0 +1,256 @@
+﻿{
+    "file_id":  "test_automat0",
+    "file_path":  "data\\raw\\test_data_1\\test_automat0.json",
+    "is_high_quality":  false,
+    "test_env":  "ACC",
+    "test_app":  "NRG Beheerkaart Elektra LS",
+    "total_steps":  10,
+    "test_cases":  [
+                       [
+                           "Hierarchy viewer Test"
+                       ]
+                   ],
+    "steps":  [
+                  {
+                      "step_index":  0,
+                      "database":  ":elektra",
+                      "object":  "E Probleem Object",
+                      "object_id":  "Passed",
+                      "module":  "Editor(s)",
+                      "method":  "Switch Spatial Context",
+                      "command":  "Execute Object Control Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+                                                       "Object":  "E Probleem Object",
+                                                       "Type":  "Switch Spatial Context",
+                                                       "Dataset":  ":elektra",
+                                                       "Custom":  "Yes",
+                                                       "FLD_CSTM0_0":  {
+                                                                           "Spatial Context":  "Stationsschema",
+                                                                           "Station Nummer":  "6 002 005",
+                                                                           "ID":  "Passed"
+                                                                       }
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  1,
+                      "database":  ":algemeen",
+                      "object":  "select",
+                      "object_id":  "Passed",
+                      "module":  "Buttons",
+                      "method":  "Click Oneshot Button",
+                      "command":  "Execute Buttons Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  2,
+                      "database":  ":topografie",
+                      "object":  "E Probleem Object",
+                      "object_id":  "Passed",
+                      "module":  "Editor(s)",
+                      "method":  "Open Object with ID",
+                      "command":  "Execute Object Control Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+                                                       "Object":  "E Probleem Object",
+                                                       "Type":  "Open Object with ID",
+                                                       "Dataset":  ":topografie",
+                                                       "Custom":  "Yes",
+                                                       "FLD_CSTM0_2":  {
+                                                                           "Spatial Context":  "Stationsschema",
+                                                                           "Station Nummer":  "None",
+                                                                           "ID":  "Passed"
+                                                                       }
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  3,
+                      "database":  ":gas",
+                      "object":  "E Probleem Object",
+                      "object_id":  "Passed",
+                      "module":  "Editor(s)",
+                      "method":  "Open Object",
+                      "command":  "Execute Object Control Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+                                                       "Object":  "E Probleem Object",
+                                                       "Type":  "Open Object",
+                                                       "Dataset":  ":gas",
+                                                       "Custom":  "Yes",
+                                                       "FLD_CSTM0_3":  {
+                                                                           "Spatial Context":  "Stationsschema",
+                                                                           "Station Nummer":  "None",
+                                                                           "ID":  "Passed"
+                                                                       }
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  4,
+                      "database":  ":algemeen",
+                      "object":  "Default",
+                      "object_id":  "Passed",
+                      "module":  "Tabs",
+                      "method":  "Select Tab",
+                      "command":  "Execute Tabs Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  5,
+                      "database":  ":elektra",
+                      "object":  "Elektra;Catalogus",
+                      "object_id":  "Passed",
+                      "module":  "Datamodel Consistency Check",
+                      "method":  "Datamodel Check",
+                      "command":  "Execute Datamodel Check Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  6,
+                      "database":  ":elektra",
+                      "object":  "Elektra;Catalogus",
+                      "object_id":  "Passed",
+                      "module":  "Datamodel Consistency Check",
+                      "method":  "Datamodel Check",
+                      "command":  "Execute Datamodel Check Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  7,
+                      "database":  ":gas",
+                      "object":  "Object Editor",
+                      "object_id":  "Passed",
+                      "module":  "Tabs",
+                      "method":  "Select Tab",
+                      "command":  "Execute Tabs Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  8,
+                      "database":  ":schema_elektra",
+                      "object":  "E LS Kabel",
+                      "object_id":  "1231231",
+                      "module":  "Datamodel CRUD",
+                      "method":  "Create",
+                      "command":  "Execute Datamodel CRUD Testcommand",
+                      "test_data":  {
+                                        "create":  {
+                                                       "Object":  "E LS Kabel",
+                                                       "Type":  "Create",
+                                                       "Dataset":  ":schema_elektra",
+                                                       "Custom":  "Yes",
+                                                       "FLD_CSTM0_8":  {
+                                                                           "Status":  "In Bedrijf",
+                                                                           "Nummer":  "3100",
+                                                                           "100":  "100",
+                                                                           "ID":  "1231231"
+                                                                       }
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+
+                                                   }
+                                    }
+                  },
+                  {
+                      "step_index":  9,
+                      "database":  ":topografie",
+                      "object":  "E Station Terrein",
+                      "object_id":  "Passed",
+                      "module":  "Editor(s)",
+                      "method":  "Switch Spatial Context",
+                      "command":  "Execute Object Control Testcommand",
+                      "test_data":  {
+                                        "create":  {
+
+                                                   },
+                                        "update":  {
+
+                                                   },
+                                        "editor":  {
+                                                       "Object":  "E Station Terrein",
+                                                       "Type":  "Switch Spatial Context",
+                                                       "Dataset":  ":topografie",
+                                                       "Custom":  "Yes",
+                                                       "FLD_CSTM0_9":  {
+                                                                           "Spatial Context":  "Stationsschema",
+                                                                           "Station Nummer":  "6 002 005",
+                                                                           "ID":  "Passed"
+                                                                       }
+                                                   }
+                                    }
+                  }
+              ]
+}

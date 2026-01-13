@@ -1,0 +1,46 @@
+{
+  "total_workflows": 4012,
+  "high_quality_count": 12,
+  "avg_steps": 10.02,
+  "top_apps": {
+    "NRG Schemakaart Elektra MS": 483,
+    "NRG Beheerkaart Elektra MS": 475,
+    "Beheerapplicatie Gas": 474,
+    "Beheerkaart Gas Hoge Druk": 448,
+    "NRG Beheerkaart Elektra TC": 444
+  },
+  "top_modules": {
+    "Tabs": 12509,
+    "Editor(s)": 12505,
+    "Buttons": 7520,
+    "Hierarchy Viewer": 4192,
+    "Datamodel CRUD": 1822,
+    "Datamodel Consistency Check": 1661
+  },
+  "top_methods": {
+    "Select Tab": 12509,
+    "Click Oneshot Button": 7520,
+    "Open Object": 3167,
+    "Open Object with ID": 3123,
+    "Verify Field": 3111,
+    "Switch Spatial Context": 3104,
+    "Select first HV object": 2116,
+    "Select second HV object": 2076,
+    "Datamodel Check": 1661,
+    "Create": 655
+  },
+  "top_objects": {
+    "Object Control": 2636,
+    "Routes": 2512,
+    "Object Editor": 2484,
+    "Hierarchy Viewer": 2447,
+    "Default": 2430,
+    "E MS Mof": 1896,
+    "E Probleem Object": 1892,
+    "E LS Kabel": 1875,
+    "E SO Hulpspanning Installatie FP": 1863,
+    "E MS Installatie FP": 1848
+  },
+  "open_create_patterns": 79,
+  "empty_steps_ratio": 0.554
+}

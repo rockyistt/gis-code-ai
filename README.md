@@ -19,14 +19,19 @@ AI自动化在GIS测试方面的应用
 
 本项目实现了一个智能GIS JSON代码生成系统，能够根据用户的自然语言描述，自动生成完整的GIS测试工作流代码。
 
+### 🎯 核心目标
+
+从大量GIS平台测试JSON文件中学习，使AI能够理解用户的自然语言指令，并生成相应的GIS操作测试代码。
+
 ### ✨ 核心特性
 
-- 🤖 **RAG检索增强** - 从1000+代码库中检索相似workflow
-- 🔥 **LoRA微调** - 在Colab免费GPU上2小时完成训练
-- 🧠 **双粒度建模** - 文件级检索 + 步骤级生成
-- 💡 **LLM指令生成** - 自动从代码生成训练数据
+- 📄 **JSON工作流解析** - 将GIS测试JSON文件解析为结构化工作流
+- 💡 **LLM指令生成** - 使用Qwen/OpenAI自动生成文件级和步骤级的用户指令
+- 🧠 **双粒度建模** - 文件级（整体目标）+ 步骤级（具体操作）
+- 🤖 **RAG检索增强** - 从代码库中检索相似workflow作为示例
+- 🔥 **模型训练** - 支持LoRA微调，建立指令到代码的映射
 - 🎨 **Web界面** - Gradio交互式界面
-- 💰 **成本友好** - 总成本<$1，可在Colab免费运行
+- 💰 **成本友好** - 可在Colab免费运行
 
 ### 🎯 快速开始
 
@@ -48,182 +53,309 @@ pip install -r requirements.txt
 python -m src.data_processing.preprocess_dual_granularity --help
 ```
 
-## 📊 系统架构
+## 📊 完整流程架构
+
+### 第一阶段：数据准备 - 生成训练数据
 
 ```
-用户输入:  "实现点缓冲区分析"
+原始JSON测试文件 (data/raw/)
+    │  ├─ template/        (高质量模板数据)
+    │  ├─ test_data_1/     (普通测试数据)
+    │  └─ test_data_hv/    ...
     │
-    ▼
-┌─────────────────────┐
-│  ML预测 (可选)       │ ← 您的文本分析模型
-│  预测步骤序列        │
-└──────────┬──────────┘
-           │
-     ┌─────┴─────┐
-     ▼           ▼
-┌─────────┐ ┌─────────┐
-│RAG检索   │ │LoRA生成 │
-│(文件级) │ │(步骤级) │
-└────┬────┘ └────┬────┘
-     │           │
-     └─────┬─────┘
-           ▼
-    完整JSON代码
+    ▼ [1. 解析JSON文件]
+结构化工作流 (parsed_workflows.jsonl)
+    │  ├─ 文件级：完整工作流元数据
+    │  └─ 步骤级：每个操作步骤的详细信息
+    │
+    ▼ [2. LLM生成用户指令]
+训练数据集
+    ├─ file_level_instructions.jsonl   (文件级：用户整体目标描述)
+    └─ step_level_instructions.jsonl   (步骤级：每个操作的详细指令)
 ```
 
-## 📂 数据准备
+### 第二阶段：模型训练
 
-### 上传您的JSON测试文件
+```
+训练数据 (指令 → JSON代码映射)
+    │
+    ▼ [3. 建立映射关系]
+    ┌─────────────────────────┐
+    │  文件级：用户描述 → 工作流结构   │
+    │  步骤级：操作指令 → 步骤代码     │
+    └──────────┬──────────────┘
+               │
+               ▼ [4. 模型训练]
+    ┌─────────────────────────┐
+    │  LoRA微调 / Fine-tuning  │
+    │  学习指令到代码的转换     │
+    └──────────┬──────────────┘
+               │
+               ▼
+      训练完成的模型
+```
 
-将原始JSON文件放入 `data/raw/` 目录：
+### 第三阶段：推理生成
+
+```
+用户输入指令: "在GIS中创建电缆对象"
+    │
+    ▼ [5. RAG检索]
+┌──────────────────┐
+│ 从已有工作流中检索 │  ← 使用file_level_instructions
+│ 找到相似的模板示例 │     作为参考
+└────────┬─────────┘
+         │
+         ▼ [6. 模型生成]
+┌──────────────────┐
+│ 使用训练好的模型  │  ← 基于step_level训练
+│ 生成JSON代码      │     逐步生成操作代码
+└────────┬─────────┘
+         │
+         ▼
+   完整JSON测试代码
+```
+
+## 📂 数据处理流程详解
+
+### 步骤1：上传JSON测试文件
+
+将从GIS平台导出的JSON测试文件放入 `data/raw/` 目录：
 
 ```bash
 data/raw/
-├── buffer_analysis.json
-├── overlay_workflow.json
-└── spatial_query.json
+├── template/                    # 高质量模板文件（优先处理）
+│   ├── template_insert_kabels.json
+│   └── template_ms_installatie.json
+├── test_data_1/                 # 普通测试数据
+│   ├── test_automat0.json
+│   └── test_automat1.json
+└── test_data_hv/                # 其他测试数据
 ```
 
-### JSON文件格式示例
+### 步骤2：解析JSON为结构化工作流
 
+```bash
+# 运行解析器
+python -m src.data_processing.workflow_parser
+
+# 生成: data/processed/parsed_workflows.jsonl
+```
+
+**解析效果**：将扁平化的JSON转换为层次化结构，每个工作流包含：
+- 文件级元数据：应用名称、数据库、对象类型等
+- 步骤级详情：每个操作的模块、方法、参数等
+
+### 步骤3：使用LLM生成用户指令
+
+```bash
+# 使用Qwen API生成指令（推荐）
+python scripts/generate_instructions_qwen.py
+
+# 测试模式（只处理2个文件）
+python scripts/generate_instructions_qwen.py --test
+
+# 生成文件:
+# - data/processed/file_level_instructions_qwen.jsonl
+# - data/processed/step_level_instructions_qwen.jsonl
+```
+
+**生成内容**：
+- **文件级指令**：描述整个工作流的目标（如："在电力网络中创建MS和HS电缆对象"）
+- **步骤级指令**：描述每个操作步骤（如："打开MS电缆编辑器"、"创建坐标为(x,y)的电缆对象"）
+
+这些指令将作为**训练的目标值**，建立从自然语言到JSON代码的映射关系。
+
+### 步骤4：建立指令到代码的映射关系
+
+生成的数据集格式：
+
+**文件级训练数据**：
 ```json
 {
-  "description": "缓冲区分析工作流",
-  "workflow_type": "spatial_analysis",
-  "test_modules": [
-    {
-      "step":  1,
-      "module":  "LoadData",
-      "description": "加载点数据",
-      "code": "{... }"
-    },
-    {
-      "step": 2,
-      "module": "BufferAnalysis",
-      "description": "执行缓冲区分析",
-      "code": "{... }"
-    }
-  ]
+  "instruction": "在电力网络中创建MS和HS电缆对象",
+  "input": "",
+  "output": "{完整的JSON工作流代码}"
 }
 ```
 
-## 🚀 使用指南
-
-### 步骤1: 数据处理
-
-```python
-from src.data_processing.preprocess_dual_granularity import DualGranularityProcessor
-
-processor = DualGranularityProcessor(raw_json_dir="data/raw")
-results = processor.process_all(output_dir="data/processed")
-
-# 输出: 
-# ✅ 文件级数据:  150 条
-# ✅ 步骤级数据: 1200 条
+**步骤级训练数据**：
+```json
+{
+  "instruction": "打开MS电缆编辑器",
+  "input": "{前序步骤上下文}",
+  "output": "{当前步骤的JSON代码}"
+}
 ```
 
-### 步骤2: 生成训练指令
-
-```python
-from src.data_processing.instruction_generator import InstructionGenerator
-
-generator = InstructionGenerator(llm_backend="openai", model="gpt-4o-mini")
-training_data = generator.batch_generate(
-    workflow_files=parsed_files,
-    output_path="data/processed/train_data.jsonl",
-    variants_per_file=5
-)
-
-# 成本:  ~$0.05 for 100 files
-```
-
-### 步骤3: 构建RAG系统
-
-```python
-from src.rag.embedding import GISCodeEmbedder
-from src.rag.retriever import GISCodeRetriever
-
-# 构建向量索引
-embedder = GISCodeEmbedder()
-embedder.build_index("data/processed/file_level_data.jsonl")
-
-# 检索测试
-retriever = GISCodeRetriever(embedder)
-results = retriever.retrieve("实现缓冲区分析", top_k=3)
-```
-
-### 步骤4: LoRA训练（Colab）
-
-在Colab中运行 [`03_LoRA_Training.ipynb`](notebooks/03_LoRA_Training.ipynb)
-
-预计时间:  2-3小时（Colab T4 GPU）
-
-### 步骤5: 生成代码
-
-```python
-from src.inference.workflow_generator import WorkflowGenerator
-
-generator = WorkflowGenerator(ml_classifier, rag_retriever, lora_model)
-result = generator.generate("我想做点数据的缓冲区分析")
-
-print(result['workflow'])  # 完整的JSON代码
-```
-
-### 步骤6: 启动Web界面
+### 步骤5：模型训练（计划中）
 
 ```bash
-python app/gradio_app.py
+# 使用LoRA微调模型
+python -m src.training.train_lora \
+  --data data/processed/step_level_instructions_qwen.jsonl \
+  --model Qwen/Qwen2.5-Coder-7B \
+  --output models/qwen-gis-lora
 ```
 
-访问 http://localhost:7860
+### 步骤6：推理生成（计划中）
 
-## 📚 详细文档
+```bash
+# 命令行推理
+python examples/demo_inference.py \
+  --instruction "创建一个新的MS电缆并设置3相状态"
 
-- [系统架构](docs/ARCHITECTURE.md) - 完整技术设计
-- [数据格式](docs/DATA_FORMAT.md) - 数据结构说明
-- [训练指南](docs/TRAINING_GUIDE.md) - 训练最佳实践
-- [API文档](docs/API_REFERENCE.md) - 代码接口文档
-- [常见问题](docs/FAQ.md) - 疑难解答
+# 或启动Web界面
+python -m src.app.gradio_ui
+```
 
-## 🎓 Jupyter Notebooks
+## 🔍 已实现的功能
 
-| Notebook | 描述 | 运行时间 | Colab |
-|----------|------|---------|-------|
-| [00_Quick_Start](notebooks/00_Quick_Start. ipynb) | 5分钟快速体验 | 5 min | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/00_Quick_Start.ipynb) |
-| [01_Data_Processing](notebooks/01_Data_Processing.ipynb) | 完整数据处理流程 | 30 min | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/01_Data_Processing.ipynb) |
-| [02_RAG_Setup](notebooks/02_RAG_Setup.ipynb) | RAG系统构建 | 1 hour | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/02_RAG_Setup.ipynb) |
-| [03_LoRA_Training](notebooks/03_LoRA_Training.ipynb) | LoRA模型训练 | 2-3 hours | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/03_LoRA_Training.ipynb) |
-| [04_Complete_Pipeline](notebooks/04_Complete_Pipeline.ipynb) | 端到端完整流程 | 4-6 hours | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/04_Complete_Pipeline.ipynb) |
-| [05_Inference_Demo](notebooks/05_Inference_Demo.ipynb) | 推理演示 | 10 min | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rockyistt/gis-code-ai/blob/main/notebooks/05_Inference_Demo.ipynb) |
+✅ JSON工作流解析器 (`src/data_processing/workflow_parser.py`)
+✅ 指令生成器 - 支持Qwen/OpenAI (`src/data_processing/instruction_generator.py`)
+✅ 数据分析工具 (`src/data_processing/analyze_data.py`)
+✅ 完整处理流水线 (`src/data_processing/run_pipeline.py`)
+✅ 命令行脚本 (`scripts/generate_instructions_qwen.py`)
+
+## 🚧 计划中的功能
+
+- [ ] RAG检索模块 (文件级相似度检索)
+- [ ] 模型训练脚本 (LoRA微调)
+- [ ] 推理引擎 (结合RAG + 生成)
+- [ ] Gradio交互界面
+- [ ] 评估框架
+
+## 🚀 快速开始
+
+### 1. 安装依赖
+
+```bash
+git clone https://github.com/yourusername/gis-code-ai.git
+cd gis-code-ai
+pip install -r requirements.txt
+```
+
+### 2. 准备数据
+
+将你的JSON测试文件放入 `data/raw/` 目录。
+
+### 3. 运行完整流程
+
+```bash
+# 设置API密钥
+$env:DASHSCOPE_API_KEY="your-dashscope-api-key"
+
+# 运行数据处理流程
+python src/data_processing/run_pipeline.py
+
+# 或使用Qwen生成指令
+python scripts/generate_instructions_qwen.py
+```
+
+### 4. 分析结果
+
+生成的文件在 `data/processed/` 目录：
+- `parsed_workflows.jsonl` - 结构化工作流
+- `file_level_instructions_qwen.jsonl` - 文件级用户指令
+- `step_level_instructions_qwen.jsonl` - 步骤级用户指令
+
+## 📋 项目目录结构
+
+```
+gis-code-ai/
+├── data/
+│   ├── raw/                    # 原始JSON测试文件
+│   │   ├── template/           # 高质量模板
+│   │   └── test_data_*/        # 普通测试数据
+│   └── processed/              # 处理后的数据
+│       ├── parsed_workflows.jsonl              # 解析后的工作流
+│       ├── file_level_instructions_qwen.jsonl  # 文件级指令
+│       └── step_level_instructions_qwen.jsonl  # 步骤级指令
+├── src/
+│   ├── data_processing/        # 数据处理模块
+│   │   ├── workflow_parser.py          # JSON解析器
+│   │   ├── instruction_generator.py    # 指令生成器
+│   │   ├── analyze_data.py             # 数据分析
+│   │   └── run_pipeline.py             # 完整流程
+│   ├── rag/                    # RAG检索模块（待实现）
+│   ├── inference/              # 推理引擎（待实现）
+│   └── app/                    # Web应用（待实现）
+├── scripts/
+│   └── generate_instructions_qwen.py   # 命令行工具
+├── examples/
+│   ├── demo_inference.py       # 推理示例
+│   └── evaluate_workflows.py   # 评估脚本
+├── configs/
+│   └── example_config.yaml     # 配置示例
+└── docs/
+    └── corrected_workflow_evaluation.md  # 评估报告
+```
+
+## 📚 核心概念
+
+### 双粒度处理
+
+本项目采用**双粒度**方法处理GIS测试工作流：
+
+1. **文件级（File-Level）**
+   - **目标**: 理解整个工作流的业务目标
+   - **输入**: 完整的JSON测试文件
+   - **输出**: 用户的整体意图描述
+   - **用途**: RAG检索相似案例
+
+2. **步骤级（Step-Level）**
+   - **目标**: 理解每个操作步骤的具体动作
+   - **输入**: 单个测试步骤 + 上下文
+   - **输出**: 该步骤的详细指令
+   - **用途**: 模型训练，逐步生成代码
+
+### 数据流转示意
+
+```
+原始JSON → 解析 → 结构化数据 → LLM生成 → 训练数据 → 模型训练 → 推理
+  (raw)         (parsed)        (instructions)    (model)    (generate)
+```
 
 ## 💰 成本估算
 
 | 项目 | 成本 | 说明 |
 |-----|------|------|
-| 指令生成 (OpenAI) | $0.05 | 100个文件 × 5变体 |
-| LoRA训练 | $0 | Colab免费T4 GPU |
-| RAG构建 | $0 | 本地ChromaDB |
-| 推理 | $0 | 本地/Colab运行 |
-| **总计** | **$0.05** | 几乎免费！ |
+| 指令生成 (Qwen) | ¥0.5-2 | 100个文件，约5万tokens |
+| 模型训练 | ¥0 | Colab免费GPU或本地GPU |
+| RAG向量库 | ¥0 | 本地部署 |
+| 推理运行 | ¥0 | 本地或Colab |
+| **总计** | **< ¥5** | 非常经济！ |
 
 ## 🔧 技术栈
 
-- **基础模型**:  Qwen2.5-0.5B-Instruct
-- **微调**: LoRA (rank=8, alpha=16)
-- **向量库**: ChromaDB
-- **Embedding**: text2vec-base-chinese
-- **训练框架**: Transformers + PEFT
-- **UI**: Gradio
-- **LLM API**: OpenAI (可选)
+- **LLM**: Qwen / OpenAI GPT
+- **数据处理**: Python, JSONL
+- **微调框架**: LoRA (PEFT)
+- **向量检索**: FAISS / ChromaDB (计划)
+- **Web UI**: Gradio (计划)
 
-## 📈 性能指标
+## 📈 当前进展
 
-基于测试数据集：
+✅ **阶段1: 数据准备** (已完成)
+- JSON解析器
+- 指令生成器 (支持Qwen和OpenAI)
+- 数据分析工具
+- 批处理脚本
 
-- ✅ JSON语法正确率: 87%
-- ✅ 功能匹配准确率: 73%
-- ✅ 推理速度: ~3秒/条 (Colab T4)
-- ✅ 训练时间: 2.5小时 (1000条数据)
+🚧 **阶段2: 模型训练** (进行中)
+- [ ] 准备训练数据格式
+- [ ] LoRA微调脚本
+- [ ] 训练监控
+
+🔜 **阶段3: RAG检索** (计划)
+- [ ] 向量化embedding
+- [ ] 相似度检索
+- [ ] 模板匹配
+
+🔜 **阶段4: 推理系统** (计划)
+- [ ] 端到端生成
+- [ ] 质量评估
+- [ ] Web界面
 
 ## 🤝 贡献指南
 
@@ -231,27 +363,21 @@ python app/gradio_app.py
 
 1. Fork本仓库
 2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+3. 提交更改 (`git commit -m 'Add AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启Pull Request
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+本项目采用 MIT 许可证。
 
 ## 🙏 致谢
 
-- [Datawhale Happy-LLM](https://github.com/datawhalechina/happy-llm) - 提供LLM学习框架
 - [Qwen](https://github.com/QwenLM/Qwen) - 优秀的中文基础模型
-- OpenAI - 提供指令生成API
-
-## 📧 联系方式
-
-- 项目链接: [https://github.com/rockyistt/gis-code-ai](https://github.com/rockyistt/gis-code-ai)
-- 问题反馈: [Issues](https://github.com/rockyistt/gis-code-ai/issues)
+- [Datawhale](https://github.com/datawhalechina) - 开源学习社区
 
 ---
 
-<div align="center">
+**⭐ 如果这个项目对你有帮助，请给个Star！**
 ⭐ 如果这个项目对您有帮助，请给我们一个Star！⭐
 </div>

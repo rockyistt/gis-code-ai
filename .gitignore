@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Envs and secrets
+.env
+.env.*
+configs/local_config.yaml
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (do not commit large datasets)
+data/raw/
+data/*.tif
+data/*.tiff
+data/*.shp
+data/*.dbf
+data/*.prj
+data/*.cpg
+data/*.geojson
+data/*.gpkg
+
+# OS
+.DS_Store
+Thumbs.db

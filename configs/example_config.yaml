@@ -1,0 +1,24 @@
+# Configuration Template
+# Copy this to local_config.yaml and add your API keys
+
+# OpenAI Configuration
+openai:
+  api_key: "your-openai-api-key-here"
+  model: "gpt-4"  # or "gpt-3.5-turbo" for lower cost
+
+# Tongyi Qianwen Configuration (DashScope)
+qianwen:
+  api_key: "your-dashscope-api-key-here"
+  model: "qwen-max"  # or "qwen-plus", "qwen-turbo"
+
+# Data Processing Settings
+data_processing:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  max_workers: 4  # Parallel processing workers
+  
+# Instruction Generation Settings
+instruction_generation:
+  temperature: 0.7
+  max_tokens: 500
+  batch_size: 10  # Process N files at a time

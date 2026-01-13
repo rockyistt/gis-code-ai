@@ -1,0 +1,70 @@
+# GIS代码生成模型 - LoRA训练配置
+
+# ============================================================
+# 模型配置
+# ============================================================
+model_name_or_path: "Qwen/Qwen2.5-Coder-7B-Instruct"  # 基座模型
+use_4bit: true  # 使用4-bit量化（推荐，节省显存）
+use_8bit: false  # 使用8-bit量化
+
+# ============================================================
+# LoRA配置
+# ============================================================
+lora_r: 64  # LoRA秩（越大越好，但显存占用越高）
+lora_alpha: 16  # LoRA缩放因子
+lora_dropout: 0.05  # Dropout率
+target_modules:  # 应用LoRA的模块
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+# ============================================================
+# 数据配置
+# ============================================================
+train_file: "data/training/training_data_train.json"
+val_file: "data/training/training_data_val.json"
+max_length: 2048  # 最大序列长度
+
+# ============================================================
+# 训练配置
+# ============================================================
+output_dir: "models/qwen-gis-lora"
+num_train_epochs: 3  # 训练轮数
+per_device_train_batch_size: 4  # 每个设备的batch size
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 4  # 梯度累积（有效batch=4*4=16）
+learning_rate: 2.0e-4  # 学习率
+warmup_steps: 100  # 预热步数
+logging_steps: 10  # 日志输出频率
+save_steps: 500  # 模型保存频率
+eval_steps: 500  # 验证频率
+
+# ============================================================
+# 优化器配置
+# ============================================================
+optim: "paged_adamw_8bit"  # 优化器
+lr_scheduler_type: "cosine"  # 学习率调度器
+weight_decay: 0.01
+max_grad_norm: 1.0
+
+# ============================================================
+# 其他配置
+# ============================================================
+fp16: true  # 使用混合精度训练
+save_total_limit: 3  # 最多保留3个checkpoint
+load_best_model_at_end: true  # 训练结束加载最佳模型
+evaluation_strategy: "steps"
+save_strategy: "steps"
+report_to: "none"  # 可改为"tensorboard"或"wandb"
+
+# ============================================================
+# 快速测试配置（用于验证流程）
+# ============================================================
+# 取消注释以下配置用于快速测试：
+# num_train_epochs: 1
+# save_steps: 50
+# max_steps: 100  # 限制总步数
