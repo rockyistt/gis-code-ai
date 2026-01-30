@@ -1,0 +1,430 @@
+[
+  {
+    "token": "e",
+    "count": 21901
+  },
+  {
+    "token": "object",
+    "count": 15124
+  },
+  {
+    "token": "tab",
+    "count": 14055
+  },
+  {
+    "token": "navigate",
+    "count": 12509
+  },
+  {
+    "token": "button",
+    "count": 9759
+  },
+  {
+    "token": "in",
+    "count": 9754
+  },
+  {
+    "token": "click",
+    "count": 9373
+  },
+  {
+    "token": "hierarchy",
+    "count": 7810
+  },
+  {
+    "token": "viewer",
+    "count": 7412
+  },
+  {
+    "token": "ms",
+    "count": 6769
+  },
+  {
+    "token": "open",
+    "count": 6290
+  },
+  {
+    "token": "select",
+    "count": 5852
+  },
+  {
+    "token": "kabel",
+    "count": 5485
+  },
+  {
+    "token": "station",
+    "count": 4230
+  },
+  {
+    "token": "verify",
+    "count": 4065
+  },
+  {
+    "token": "components",
+    "count": 4012
+  },
+  {
+    "token": "fp",
+    "count": 3795
+  },
+  {
+    "token": "installatie",
+    "count": 3718
+  },
+  {
+    "token": "field",
+    "count": 3705
+  },
+  {
+    "token": "values",
+    "count": 3705
+  },
+  {
+    "token": "routes",
+    "count": 3290
+  },
+  {
+    "token": "default",
+    "count": 3198
+  },
+  {
+    "token": "spatial",
+    "count": 3169
+  },
+  {
+    "token": "context",
+    "count": 3169
+  },
+  {
+    "token": "dataset",
+    "count": 3167
+  },
+  {
+    "token": "by",
+    "count": 3123
+  },
+  {
+    "token": "id",
+    "count": 3123
+  },
+  {
+    "token": "switch",
+    "count": 3104
+  },
+  {
+    "token": "to",
+    "count": 3104
+  },
+  {
+    "token": "elektra",
+    "count": 2781
+  },
+  {
+    "token": "control",
+    "count": 2636
+  },
+  {
+    "token": "catalogus",
+    "count": 2590
+  },
+  {
+    "token": "editor",
+    "count": 2484
+  },
+  {
+    "token": "system",
+    "count": 2395
+  },
+  {
+    "token": "update",
+    "count": 2345
+  },
+  {
+    "token": "delete",
+    "count": 2287
+  },
+  {
+    "token": "probleem",
+    "count": 2206
+  },
+  {
+    "token": "first",
+    "count": 2190
+  },
+  {
+    "token": "ls",
+    "count": 2186
+  },
+  {
+    "token": "so",
+    "count": 2160
+  },
+  {
+    "token": "second",
+    "count": 2154
+  },
+  {
+    "token": "stationcomplex",
+    "count": 2117
+  },
+  {
+    "token": "hs",
+    "count": 2058
+  },
+  {
+    "token": "mof",
+    "count": 1898
+  },
+  {
+    "token": "hulpspanning",
+    "count": 1863
+  },
+  {
+    "token": "gebouw",
+    "count": 1814
+  },
+  {
+    "token": "terrein",
+    "count": 1768
+  },
+  {
+    "token": "check",
+    "count": 1731
+  },
+  {
+    "token": "lock",
+    "count": 1688
+  },
+  {
+    "token": "data",
+    "count": 1661
+  },
+  {
+    "token": "consistency",
+    "count": 1661
+  },
+  {
+    "token": "for",
+    "count": 1661
+  },
+  {
+    "token": "insert",
+    "count": 1638
+  },
+  {
+    "token": "get",
+    "count": 1593
+  },
+  {
+    "token": "algemeen",
+    "count": 979
+  },
+  {
+    "token": "schema_elektra",
+    "count": 969
+  },
+  {
+    "token": "gas",
+    "count": 963
+  },
+  {
+    "token": "osi_staging",
+    "count": 934
+  },
+  {
+    "token": "with",
+    "count": 907
+  },
+  {
+    "token": "topografie",
+    "count": 876
+  },
+  {
+    "token": "create",
+    "count": 823
+  },
+  {
+    "token": "manage",
+    "count": 681
+  },
+  {
+    "token": "database",
+    "count": 655
+  },
+  {
+    "token": "3",
+    "count": 610
+  },
+  {
+    "token": "modified",
+    "count": 594
+  },
+  {
+    "token": "attributes",
+    "count": 328
+  },
+  {
+    "token": "containing",
+    "count": 173
+  },
+  {
+    "token": "properties",
+    "count": 173
+  },
+  {
+    "token": "having",
+    "count": 169
+  },
+  {
+    "token": "specified",
+    "count": 169
+  },
+  {
+    "token": "defined",
+    "count": 154
+  },
+  {
+    "token": "fields",
+    "count": 154
+  },
+  {
+    "token": "veld",
+    "count": 31
+  },
+  {
+    "token": "rail",
+    "count": 18
+  },
+  {
+    "token": "aardingstrafo",
+    "count": 17
+  },
+  {
+    "token": "geleider",
+    "count": 13
+  },
+  {
+    "token": "6",
+    "count": 11
+  },
+  {
+    "token": "4",
+    "count": 11
+  },
+  {
+    "token": "eindsluiting",
+    "count": 9
+  },
+  {
+    "token": "kb",
+    "count": 9
+  },
+  {
+    "token": "2",
+    "count": 8
+  },
+  {
+    "token": "net",
+    "count": 6
+  },
+  {
+    "token": "1",
+    "count": 5
+  },
+  {
+    "token": "5",
+    "count": 5
+  },
+  {
+    "token": "spoel",
+    "count": 5
+  },
+  {
+    "token": "condensator",
+    "count": 5
+  },
+  {
+    "token": "overspanningsafleider",
+    "count": 5
+  },
+  {
+    "token": "digitalisering",
+    "count": 5
+  },
+  {
+    "token": "nd",
+    "count": 5
+  },
+  {
+    "token": "s",
+    "count": 5
+  },
+  {
+    "token": "dms",
+    "count": 5
+  },
+  {
+    "token": "storingverklikker",
+    "count": 4
+  },
+  {
+    "token": "verbinding",
+    "count": 4
+  },
+  {
+    "token": "functie",
+    "count": 4
+  },
+  {
+    "token": "8",
+    "count": 4
+  },
+  {
+    "token": "worldmap",
+    "count": 4
+  },
+  {
+    "token": "sec",
+    "count": 3
+  },
+  {
+    "token": "zekering",
+    "count": 2
+  },
+  {
+    "token": "beveiliging",
+    "count": 2
+  },
+  {
+    "token": "systeem",
+    "count": 2
+  },
+  {
+    "token": "meetdraad",
+    "count": 2
+  },
+  {
+    "token": "meetpaal",
+    "count": 2
+  },
+  {
+    "token": "spanning",
+    "count": 2
+  },
+  {
+    "token": "verdeling",
+    "count": 2
+  },
+  {
+    "token": "gelijkrichter",
+    "count": 2
+  },
+  {
+    "token": "clear",
+    "count": 1
+  },
+  {
+    "token": "7",
+    "count": 1
+  }
+]

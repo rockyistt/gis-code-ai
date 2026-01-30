@@ -1,8 +1,58 @@
-# 使用Qwen生成训练指令
+# Scripts 脚本工具集
 
-本目录包含使用Qwen API批量生成训练指令的脚本。
+本目录包含数据处理、指令生成和Colab工具脚本。
 
-## 📋 准备工作
+## 📁 文件说明
+
+### 指令生成（Qwen API）
+- `generate_instructions_rules.py` - 基于规则生成指令
+- `generate_instructions_weighted.py` - 加权变体生成
+
+### 训练相关
+- `quick_train.py` - 快速训练脚本
+
+### Colab工具 🆕
+- **`colab_model_utils.py`** - Google Colab模型保存/加载工具
+  - 解决Drive文件同步导致的崩溃问题
+  - 提供 `save_model_safely()` 和 `load_model_safely()` 函数
+  - 使用方法见：[docs/COLAB_DRIVE_CRASH_FIX.md](../docs/COLAB_DRIVE_CRASH_FIX.md)
+
+---
+
+## 🔧 Colab模型工具使用（重要！）
+
+如果你在Google Colab训练模型，**强烈推荐**使用这个工具避免崩溃：
+
+### 训练后保存
+```python
+# 在Colab中
+!wget https://raw.githubusercontent.com/YOUR_REPO/gis-code-ai/main/scripts/colab_model_utils.py
+
+from colab_model_utils import save_model_safely
+
+local_path, drive_path = save_model_safely(
+    trainer=trainer,
+    tokenizer=tokenizer,
+    output_name="codellama-gis-lora"
+)
+```
+
+### 新Session加载
+```python
+from colab_model_utils import load_model_safely
+
+model, tokenizer = load_model_safely(
+    lora_model_name="codellama-gis-lora",
+    base_model_name="codellama/CodeLlama-7b-Instruct-hf",
+    use_local_cache=True  # 关键！避免Drive I/O瓶颈
+)
+```
+
+详细说明：[docs/COLAB_DRIVE_CRASH_FIX.md](../docs/COLAB_DRIVE_CRASH_FIX.md)
+
+---
+
+## 📋 Qwen指令生成准备工作
 
 ### 1. 获取DashScope API密钥
 

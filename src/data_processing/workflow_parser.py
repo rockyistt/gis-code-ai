@@ -49,8 +49,19 @@ class WorkflowParser:
         else:
             total_steps = 0
         
+        # Generate unique file_id with folder prefix to avoid duplicates
+        # Example: "template/test_001" instead of just "test_001"
+        try:
+            relative_path = json_path.relative_to(self.raw_data_dir)
+            # Use parent folder + filename (without extension)
+            folder_prefix = relative_path.parent.name if relative_path.parent.name != '.' else ''
+            file_id = f"{folder_prefix}/{json_path.stem}" if folder_prefix else json_path.stem
+        except ValueError:
+            # Fallback if relative path calculation fails
+            file_id = json_path.stem
+        
         workflow = {
-            "file_id": json_path.stem,
+            "file_id": file_id,
             "file_path": str(json_path),
             "is_high_quality": is_template,
             "test_env": data.get("testenvs0", ["Unknown"])[0] if data.get("testenvs0") else "Unknown",

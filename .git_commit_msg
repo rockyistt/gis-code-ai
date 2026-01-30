@@ -1,0 +1,26 @@
+feat: 完成数据处理pipeline和归一化、添加同义词库、支持层次化训练数据和分割脚本
+
+主要更新:
+1. 数据匿名化: 将template/xxx -> file_id_00001格式，保护隐私
+2. 指令生成优化: 基于匿名化数据重新生成step/file级指令
+3. 同义词库: 42项映射规则(create/add/insert->create等)
+4. 指令归一化: 小写化 + 同义词映射到canonical形式
+5. 训练数据分割: 36202/4007 train/val样本(按file分割无重叠)
+6. 新增脚本:
+   - scripts/aggregate_step_to_file_instructions.py
+   - scripts/normalize_instructions.py
+   - scripts/split_training_data.py
+   - src/training/prepare_hierarchical_training_data.py
+7. 质量成就:
+   - "multiple objects"问题: 94.7% -> 0%
+   - 层次化上下文: file_task + previous_steps + remaining_objects
+   - 关键词加权: action(3.0) object(2.0) context(1.5)
+
+数据统计:
+- 总样本: 40,209个(训练: 36,202, 验证: 4,007)
+- 总文件: 4,012个
+- 匿名数据: 137.92 MB
+- 训练集: data/training/training_data_train.json
+- 验证集: data/training/training_data_val.json
+
+准备: 模型训练(LoRA微调Qwen2.5-Coder-7B)
