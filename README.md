@@ -57,147 +57,159 @@ python -m src.data_processing.preprocess_dual_granularity --help
 
 ## 📊 完整流程架构
 
-### Complete Workflow Architecture (English Flowchart)
-
-```mermaid
-graph TD
-  subgraph Stage 1: Data Preparation
-    A[Raw JSON Test Files (data/raw/)] --> B[Workflow Parser]
-    B --> C[Structured Workflows (parsed_workflows.jsonl)]
-    C --> D1[Step-Level Rule Generation]
-    D1 --> E2[step_level_instructions_weighted.jsonl<br/>✓ Weighted keywords<br/>✓ No 'multiple objects']
-    E2 --> D2[File-Level Intelligent Aggregation]
-    D2 --> E1[file_level_instructions_aggregated.jsonl<br/>✓ Inferred from filename<br/>✓ Aggregated from steps]
-  end
-  subgraph Stage 2: Hierarchical Training
-    E1 --> F1[File Context Provider]
-    E2 --> F2[Step Generator]
-    F1 --> G[Context Window Training<br/>File task + Previous steps]
-    F2 --> G
-    G --> H[Weighted Loss Function<br/>keyword importance × token loss]
-    H --> I[LoRA Fine-tuned Model<br/>3.2M params / CodeLlama-7B]
-  end
-  subgraph Stage 3: Inference
-    U[User Instruction] --> J[RAG Retrieve Similar Workflows]
-    I --> K[Generate with Hierarchical Context]
-    J --> K
-    K --> L[Complete JSON Test Code]
-  end
-```
-
-### 第一阶段：数据准备 - 生成训练数据
+### 🏗️ 双层结构训练架构（File → Steps → JSON）
 
 ```
-原始JSON测试文件 (data/raw/)
-    │  ├─ template/        (高质量模板数据)
-    │  ├─ test_data_1/     (普通测试数据)
-    │  └─ test_data_hv/    ...
-    │
-    ▼ [1. 解析JSON文件]
-结构化工作流 (parsed_workflows.jsonl)
-    │  ├─ 文件级：完整工作流元数据
-    │  └─ 步骤级：每个操作步骤的详细信息
-    │
-    ▼ [2. 数据匿名化]
-匿名化工作流 (parsed_workflows_anonymized.jsonl)
-    │  ├─ file_id: template/xxx → file_id_00001
-    │  ├─ 映射表: file_id_mapping.json
-    │  └─ 保护隐私，防止泄露文件路径
-    │
-    ▼ [3. Step级规则生成（带权重，基于匿名化数据）]
-step_level_instructions_weighted.jsonl
-    │  ├─ 每个step的具体指令（无模糊对象）
-    │  ├─ 关键词权重 (action: 3.0, object: 2.0, context: 1.5)
-    │  ├─ 结构化信息保留
-    │  └─ ✅ 质量：无"multiple objects"问题
-    │
-    ▼ [4. File级智能聚合（基于匿名化数据）]
-file_level_instructions_aggregated.jsonl
-    │  ├─ 从文件名推断业务任务
-    │  ├─ 从steps聚合对象和操作
-    │  ├─ 智能对象列表（列出主要3个+类别）
-    │  └─ ✅ 改进：94.7% → 0% "multiple objects"
-    │
-    ▼ [5. 同义词库构建与归一化]
-synonym_map_initial.json + normalized instructions
-    │  ├─ 42项同义词映射（动词/名词/域前缀）
-    │  ├─ create/add/insert → create
-    │  ├─ database/catalog → dataset
-    │  ├─ tab/panel/page → tab
-    │  └─ ✅ 统一表达，减少词表规模
-    │
-    ▼ [6. 层次化训练数据构建]
-hierarchical_training_data.json
-    ├─ File任务描述（为Step提供整体目标）
-    ├─ Step序列（每个step包含上下文）
-    ├─ 关键词加权信息
-    ├─ 依赖关系标注
-    └─ Previous steps历史（仅针对Step级）
+┌────────────────────────────────────────────────────────────────┐
+│                      数据处理流程                                │
+└────────────────────────────────────────────────────────────────┘
+
+步骤1️⃣：原始数据解析
+  4,012 个 raw JSON 文件
+      ↓
+  WorkflowParser
+      ↓
+  parsed_workflows.jsonl (13.40 MB)
+  ├─ file_id: file_000001 ~ file_004012
+  ├─ test_app, test_env
+  └─ steps: [step_0, step_1, ..., step_9]
+       ├─ method (Create, Update, Open, ...)
+       ├─ object (E MS Kabel, HS Kabel, ...)
+       ├─ database, module, command
+       └─ test_data {create, update, editor}
+
+步骤2️⃣：指令生成
+  parsed_workflows.jsonl
+      ↓
+  InstructionGenerator
+      ├─ 文件级指令生成
+      └─ 步骤级指令生成
+      ↓
+  输出两个文件：
+  ├─ file_level_instructions.json (4,012 项)
+  │   "Test workflow in App: Work with Objects through N steps"
+  │
+  └─ step_level_instructions.jsonl (40,209 行)
+      "Step X/Y: Method Object" + context info
 ```
 
-### 第二阶段：层次化模型训练
+### 🎓 双层训练架构
 
 ```
-训练数据 (保留层次结构)
-    │
-    ▼ [7. 构建层次化样本]
-    ┌──────────────────────────────┐
-    │  每个Step训练样本包含：         │
-    │  ├─ File Task（整体任务）       │
-    │  │   └─ 告诉step它在完成什么    │
-    │  ├─ Previous Steps（上下文）   │
-    │  │   └─ 前3个步骤摘要          │
-    │  ├─ Current Step指令          │
-    │  │   └─ 当前步骤具体操作        │
-    │  ├─ Remaining Objects待处理   │
-    │  │   └─ 尚未处理的对象列表      │
-    │  └─ 关键词权重标注            │
-    │      └─ [action: 3.0, ...]   │
-    │                               │
-    │  注：上下文仅存在于Step级      │
-    │      File级只是任务描述        │
-    └──────────┬───────────────────┘
-               │
-               ▼ [6. LoRA微调训练]
-    ┌──────────────────────────────┐
-    │  层次化训练策略：               │
-    │  • Context Window（推荐）      │
-    │    └─ 利用File-Step嵌套信息    │
-    │  • Multi-Task Learning（最佳） │
-    │    └─ File + Step双任务       │
-    │  • 加权损失函数                │
-    │    └─ keyword_weight × loss   │
-    │  • 参数高效                    │
-    │    └─ 3.2M (LoRA r=32, α=16) │
-    └──────────┬───────────────────┘
-               │
-               ▼
-      训练完成的模型
-      ├─ 理解File-Step层次关系
-      ├─ 感知前序步骤依赖
-      └─ 关注关键词重要度
-      
-      预期提升：
-      • 对象匹配率：72% → 85%+
-      • 步骤顺序正确率：65% → 78%+
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                   │
+│                   Task-1: 文件级指令 → 步骤指令                  │
+│                                                                   │
+│  输入: "Test workflow in GIS: Work with Cables through 7 steps"  │
+│       (来自 file_level_instructions.json)                        │
+│                                                                   │
+│           ↓                                                       │
+│         ┌─────────────────────────────┐                          │
+│         │   Task-1 模型 (LoRA微调)    │                          │
+│         │   CodeLlama-7B + LoRA       │                          │
+│         └──────────┬──────────────────┘                          │
+│                    ↓                                              │
+│  输出: [                                                         │
+│    "Step 1/7: Open MS Kabel",                                   │
+│    "Step 2/7: Create a new MS Kabel",                           │
+│    "Step 3/7: Update HS Kabel",                                 │
+│    ...                                                           │
+│  ]                                                               │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                   │
+│               Task-2: 步骤指令 → JSON代码                        │
+│                                                                   │
+│  输入: "Step 2/7: Create a new MS Kabel"                        │
+│       (来自 step_level_instructions.jsonl)                       │
+│                                                                   │
+│       + 上下文:                                                  │
+│       - 文件任务: "Work with Cables..."                         │
+│       - 前置步骤: ["Step 1: Open MS Kabel"]                     │
+│       - 后续步骤: ["Step 3: Update HS Kabel", ...]             │
+│                                                                   │
+│           ↓                                                       │
+│         ┌─────────────────────────────┐                          │
+│         │   Task-2 模型 (LoRA微调)    │                          │
+│         │   CodeLlama-7B + LoRA       │                          │
+│         └──────────┬──────────────────┘                          │
+│                    ↓                                              │
+│  输出: {                                                         │
+│    "action": "create_object",                                   │
+│    "params": {                                                   │
+│      "object_type": "E MS Kabel",                               │
+│      "coordinates": [186355533, 439556907],                     │
+│      "properties": {...}                                        │
+│    }                                                             │
+│  }                                                               │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 第三阶段：推理生成
+### 📊 数据架构对比
+
+| 阶段 | 输入来源 | 输入类型 | 输出类型 | 样本数 | 目的 |
+|------|--------|--------|--------|--------|------|
+| **Task-1** | file_level_instructions.json | 文件级指令 | 步骤指令列表 | 4,012 | 学习任务分解 |
+| **Task-2** | step_level_instructions.jsonl | 步骤指令 + 上下文 | JSON代码 | 40,209 | 学习代码生成 |
+
+### 📈 训练配置
+
+```yaml
+Task-1 模型 (文件→步骤):
+  - 数据样本: 4,012 个文件级指令
+  - 序列长度: 1,024 tokens
+  - 训练轮数: 5 epochs
+  - 学习率: 5e-5 (较小，保留基础知识)
+  - Batch Size: 2, Gradient Accumulation: 2
+  - 预期耗时: 2-3 小时 (T4 GPU)
+
+Task-2 模型 (步骤→JSON):
+  - 数据样本: 40,209 个步骤指令
+  - 序列长度: 512 tokens
+  - 训练轮数: 3 epochs
+  - 学习率: 1e-4 (标准学习率)
+  - Batch Size: 4, Gradient Accumulation: 1
+  - 预期耗时: 3-4 小时 (T4 GPU)
+```
+
+### 🔄 推理流程（端到端）
 
 ```
-用户输入指令: "在GIS中创建电缆对象"
-    │
-    ▼ [5. RAG检索]
-┌──────────────────┐
-│ 从已有工作流中检索 │  ← 使用file_level_instructions
-│ 找到相似的模板示例 │     作为参考
-└────────┬─────────┘
-         │
-         ▼ [6. 模型生成]
-┌──────────────────┐
-│ 使用训练好的模型  │  ← 基于step_level训练
-│ 生成JSON代码      │     逐步生成操作代码
-└────────┬─────────┘
+用户输入:
+  "Create cables and configure properties in the system"
+          ↓
+  Task-1 模型 (文件→步骤)
+  生成步骤分解:
+    ├─ Step 1/5: Open cable configuration
+    ├─ Step 2/5: Create E-type cable
+    ├─ Step 3/5: Create H-type cable
+    ├─ Step 4/5: Set cable properties
+    └─ Step 5/5: Verify configuration
+          ↓
+  Task-2 模型 (步骤→JSON) 循环处理每个步骤
+    ├─ Step 1 → {action: "open_config", params: {...}}
+    ├─ Step 2 → {action: "create_object", params: {...}}
+    ├─ Step 3 → {action: "create_object", params: {...}}
+    ├─ Step 4 → {action: "set_properties", params: {...}}
+    └─ Step 5 → {action: "verify", params: {...}}
+          ↓
+  完整工作流:
+  {
+    "workflow": {
+      "task": "Create cables and configure...",
+      "steps": [
+        {step: 1, ...},
+        {step: 2, ...},
+        ...
+      ]
+    }
+  }
+```
+
+### 📚 数据文件说明
          │
          ▼
    完整JSON测试代码
