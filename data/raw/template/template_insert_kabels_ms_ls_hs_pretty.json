@@ -1,0 +1,161 @@
+{
+  "testenvs0": [
+    "TST"
+  ],
+  "testapps0": [
+    "NRG Beheerkaart Elektra MS"
+  ],
+  "teststeps0": [
+    7
+  ],
+  "testdbs0_0": ":elektra",
+  "testobjs0_0": "E MS Kabel",
+  "testobj_ids0_0": "Passed",
+  "testmodules0_0": "Editor(s)",
+  "testmethodes0_0": "Open Object",
+  "testcommands0_0": "Execute Object Control Testcommand",
+  "testdata_cr0_0": {},
+  "testdata_upd0_0": {},
+  "testdata_editor0_0": {
+    "Object": "E MS Kabel",
+    "Type": "Open Object",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_0": {
+      "Spatial Context": "Stationsschema",
+      "Station Nummer": "6 002 005",
+      "ID": "Passed"
+    }
+  },
+  "testdbs0_1": ":elektra",
+  "testobjs0_1": "Object Editor",
+  "testobj_ids0_1": "Passed",
+  "testmodules0_1": "Tabs",
+  "testmethodes0_1": "Select Tab",
+  "testcommands0_1": "Execute Tabs Testcommand",
+  "testdata_cr0_1": {},
+  "testdata_upd0_1": {},
+  "testdata_editor0_1": {},
+  "testdbs0_2": ":elektra",
+  "testobjs0_2": "E MS Kabel",
+  "testobj_ids0_2": "121319941725882",
+  "testmodules0_2": "Datamodel CRUD",
+  "testmethodes0_2": "Create",
+  "testcommands0_2": "Execute Datamodel CRUD Testcommand",
+  "testdata_cr0_2": {
+    "Object": "E MS Kabel",
+    "Type": "Create",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_2": {
+      "Fase-aanduiding": "3 fasen",
+      "Status": "In Bedrijf",
+      "Case Nummer": "1234",
+      "Beheerder": "Liander",
+      "Eigenaar": "Liander",
+      "Ligging": [
+        "186355533.31",
+        "186361409.31",
+        "439556907.27",
+        "439560079.27"
+      ],
+      "ID": "121319941725882"
+    }
+  },
+  "testdata_upd0_2": {},
+  "testdata_editor0_2": {},
+  "testdbs0_3": ":elektra",
+  "testobjs0_3": "E HS Kabel",
+  "testobj_ids0_3": "Passed",
+  "testmodules0_3": "Editor(s)",
+  "testmethodes0_3": "Open Object",
+  "testcommands0_3": "Execute Object Control Testcommand",
+  "testdata_cr0_3": {},
+  "testdata_upd0_3": {},
+  "testdata_editor0_3": {
+    "Object": "E HS Kabel",
+    "Type": "Open Object",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_3": {
+      "Spatial Context": "Stationsschema",
+      "Station Nummer": "6 002 005",
+      "ID": "Passed"
+    }
+  },
+  "testdbs0_4": ":elektra",
+  "testobjs0_4": "E HS Kabel",
+  "testobj_ids0_4": "121319941725888",
+  "testmodules0_4": "Datamodel CRUD",
+  "testmethodes0_4": "Create",
+  "testcommands0_4": "Execute Datamodel CRUD Testcommand",
+  "testdata_cr0_4": {
+    "Object": "E HS Kabel",
+    "Type": "Create",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_4": {
+      "Fase-aanduiding": "3 fasen",
+      "Status": "In Bedrijf",
+      "Projectnummer": "234234",
+      "Beheerder": "Liander",
+      "Eigenaar": "Liander",
+      "Ligging": [
+        "186352168.49",
+        "186360926.13",
+        "439552954.57",
+        "439557947.97"
+      ],
+      "ID": "121319941725888"
+    }
+  },
+  "testdata_upd0_4": {},
+  "testdata_editor0_4": {},
+  "testdbs0_5": ":elektra",
+  "testobjs0_5": "E LS Kabel",
+  "testobj_ids0_5": "Passed",
+  "testmodules0_5": "Editor(s)",
+  "testmethodes0_5": "Open Object",
+  "testcommands0_5": "Execute Object Control Testcommand",
+  "testdata_cr0_5": {},
+  "testdata_upd0_5": {},
+  "testdata_editor0_5": {
+    "Object": "E LS Kabel",
+    "Type": "Open Object",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_5": {
+      "Spatial Context": "Stationsschema",
+      "Station Nummer": "6 002 005",
+      "ID": "Passed"
+    }
+  },
+  "testdbs0_6": ":elektra",
+  "testobjs0_6": "E LS Kabel",
+  "testobj_ids0_6": "121319941725894",
+  "testmodules0_6": "Datamodel CRUD",
+  "testmethodes0_6": "Create",
+  "testcommands0_6": "Execute Datamodel CRUD Testcommand",
+  "testdata_cr0_6": {
+    "Object": "E LS Kabel",
+    "Type": "Create",
+    "Dataset": ":elektra",
+    "Custom": "Yes",
+    "FLD_CSTM0_6": {
+      "Ligging": [
+        "186355533.31",
+        "186361409.31",
+        "439556907.27",
+        "439560079.27"
+      ],
+      "ID": "121319941725894"
+    }
+  },
+  "testdata_upd0_6": {},
+  "testdata_editor0_6": {},
+  "testcases": [
+    [
+      "Datamodel CRUD Object"
+    ]
+  ]
+}

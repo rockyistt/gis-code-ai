@@ -16,7 +16,7 @@ configs/local_config.yaml
 .ipynb_checkpoints/
 
 # Data (do not commit large datasets)
-data/raw/
+# data/raw/  # 包含raw数据文件夹
 data/*.tif
 data/*.tiff
 data/*.shp
