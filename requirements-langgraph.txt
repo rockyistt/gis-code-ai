@@ -1,0 +1,6 @@
+# Optional dependencies for experimenting with LangChain/LangGraph orchestration.
+# Keep this separate from requirements.txt so the default local deployment remains
+# lightweight and can run without agent-framework dependencies.
+langgraph>=1.0.0
+langchain>=1.0.0
+langchain-core>=1.0.0

@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980">
+  <defs>
+    <style>
+      .title { font: 700 34px Arial, sans-serif; fill: #1f2937; }
+      .subtitle { font: 400 18px Arial, sans-serif; fill: #4b5563; }
+      .lane-title { font: 700 18px Arial, sans-serif; fill: #111827; }
+      .box-title { font: 700 17px Arial, sans-serif; fill: #111827; }
+      .box-text { font: 400 13px Arial, sans-serif; fill: #374151; }
+      .small { font: 400 12px Arial, sans-serif; fill: #4b5563; }
+      .decision { font: 700 15px Arial, sans-serif; fill: #111827; }
+      .arrow { stroke: #374151; stroke-width: 2.2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-soft { stroke: #6b7280; stroke-width: 1.8; fill: none; stroke-dasharray: 6 5; marker-end: url(#arrowheadSoft); }
+      .lane { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.5; }
+      .box { stroke: #334155; stroke-width: 1.6; rx: 8; ry: 8; }
+      .input { fill: #e0f2fe; }
+      .plan { fill: #dcfce7; }
+      .gen { fill: #fef3c7; }
+      .quality { fill: #ede9fe; }
+      .output { fill: #ffe4e6; }
+      .decision-fill { fill: #ffffff; stroke: #334155; stroke-width: 1.6; }
+      .note { fill: #ffffff; stroke: #94a3b8; stroke-width: 1.2; rx: 6; ry: 6; }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#374151"/>
+    </marker>
+    <marker id="arrowheadSoft" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L12,4 L0,8 Z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="980" fill="#ffffff"/>
+
+  <text x="70" y="58" class="title">Latest GIS Code AI Architecture</text>
+  <text x="70" y="88" class="subtitle">From single-step RAG generation to controllable multi-agent workflow generation</text>
+
+  <rect x="55" y="120" width="290" height="720" class="lane"/>
+  <text x="78" y="152" class="lane-title">1. Interaction Layer</text>
+
+  <rect x="375" y="120" width="270" height="720" class="lane"/>
+  <text x="398" y="152" class="lane-title">2. Planning Layer</text>
+
+  <rect x="675" y="120" width="365" height="720" class="lane"/>
+  <text x="698" y="152" class="lane-title">3. Generation Layer</text>
+
+  <rect x="1070" y="120" width="230" height="720" class="lane"/>
+  <text x="1093" y="152" class="lane-title">4. Quality Layer</text>
+
+  <rect x="1330" y="120" width="215" height="720" class="lane"/>
+  <text x="1353" y="152" class="lane-title">5. Output Layer</text>
+
+  <rect x="95" y="205" width="205" height="76" class="box input"/>
+  <text x="128" y="234" class="box-title">User Instruction</text>
+  <text x="121" y="258" class="box-text">Natural-language GIS task</text>
+
+  <polygon points="197,335 292,392 197,449 102,392" class="decision-fill"/>
+  <text x="151" y="386" class="decision">Planning Mode?</text>
+  <text x="147" y="407" class="small">auto or ask user</text>
+
+  <rect x="95" y="520" width="205" height="82" class="box input"/>
+  <text x="128" y="550" class="box-title">Human Choice</text>
+  <text x="120" y="574" class="box-text">Pause at ambiguous</text>
+  <text x="136" y="592" class="box-text">decision points</text>
+
+  <rect x="410" y="205" width="200" height="82" class="box plan"/>
+  <text x="454" y="235" class="box-title">Planner Agent</text>
+  <text x="441" y="259" class="box-text">Creates step intents</text>
+
+  <rect x="410" y="350" width="200" height="96" class="box plan"/>
+  <text x="438" y="381" class="box-title">Candidate Provider</text>
+  <text x="435" y="405" class="box-text">Combines topology and</text>
+  <text x="441" y="423" class="box-text">historical transitions</text>
+
+  <rect x="398" y="520" width="96" height="74" class="box plan"/>
+  <text x="421" y="550" class="box-title">Topology</text>
+  <text x="419" y="574" class="small">domain rules</text>
+
+  <rect x="526" y="520" width="96" height="74" class="box plan"/>
+  <text x="543" y="550" class="box-title">History</text>
+  <text x="537" y="574" class="small">real workflow</text>
+
+  <rect x="705" y="175" width="285" height="74" class="box gen"/>
+  <text x="800" y="204" class="box-title">RAG Agent</text>
+  <text x="748" y="228" class="box-text">Retrieve historical JSON template</text>
+
+  <rect x="705" y="303" width="285" height="74" class="box gen"/>
+  <text x="765" y="332" class="box-title">Fine-Tuned Model Agent</text>
+  <text x="732" y="356" class="box-text">Generate JSON when RAG has no match</text>
+
+  <rect x="705" y="431" width="285" height="74" class="box gen"/>
+  <text x="786" y="460" class="box-title">Fallback Agent</text>
+  <text x="735" y="484" class="box-text">Schema-safe deterministic generation</text>
+
+  <rect x="705" y="560" width="285" height="74" class="box gen"/>
+  <text x="756" y="589" class="box-title">Template Normalizer</text>
+  <text x="735" y="613" class="box-text">Map RAG/LLM output to step schema</text>
+
+  <rect x="705" y="690" width="285" height="74" class="box gen"/>
+  <text x="749" y="719" class="box-title">Step Materializer</text>
+  <text x="748" y="743" class="box-text">Append executable workflow step</text>
+
+  <rect x="1110" y="230" width="150" height="74" class="box quality"/>
+  <text x="1132" y="260" class="box-title">Validator</text>
+  <text x="1123" y="284" class="box-text">schema and IDs</text>
+
+  <rect x="1110" y="385" width="150" height="74" class="box quality"/>
+  <text x="1139" y="415" class="box-title">Repairer</text>
+  <text x="1120" y="439" class="box-text">fix recoverable errors</text>
+
+  <rect x="1110" y="540" width="150" height="74" class="box quality"/>
+  <text x="1139" y="570" class="box-title">Reviewer</text>
+  <text x="1129" y="594" class="box-text">status and confidence</text>
+
+  <rect x="1352" y="255" width="165" height="82" class="box output"/>
+  <text x="1381" y="285" class="box-title">Clean Workflow</text>
+  <text x="1371" y="309" class="box-text">Executable JSON only</text>
+
+  <rect x="1352" y="485" width="165" height="82" class="box output"/>
+  <text x="1394" y="515" class="box-title">Trace JSON</text>
+  <text x="1372" y="539" class="box-text">Agent decisions and</text>
+  <text x="1389" y="557" class="box-text">provenance</text>
+
+  <rect x="365" y="870" width="870" height="78" class="note"/>
+  <text x="392" y="897" class="box-title">Key Design Principle</text>
+  <text x="392" y="921" class="box-text">Separate planning, generation, validation, and explanation.</text>
+  <text x="392" y="939" class="box-text">Noisy model output never becomes executable JSON without checks.</text>
+
+  <path d="M197 281 L197 330" class="arrow"/>
+  <path d="M292 392 L410 246" class="arrow"/>
+  <text x="318" y="332" class="small">Auto</text>
+  <path d="M197 449 L197 520" class="arrow"/>
+  <text x="215" y="490" class="small">Ask</text>
+  <path d="M300 561 L410 398" class="arrow"/>
+  <path d="M510 287 L510 350" class="arrow"/>
+  <path d="M494 557 L526 557" class="arrow-soft"/>
+  <path d="M510 446 L446 520" class="arrow-soft"/>
+  <path d="M510 446 L574 520" class="arrow-soft"/>
+  <path d="M610 398 L705 212" class="arrow"/>
+
+  <path d="M990 212 L1110 267" class="arrow"/>
+  <text x="1010" y="224" class="small">template found</text>
+  <path d="M847 249 L847 303" class="arrow"/>
+  <text x="862" y="280" class="small">no match</text>
+  <path d="M847 377 L847 431" class="arrow"/>
+  <text x="862" y="410" class="small">invalid/unavailable</text>
+  <path d="M847 505 L847 560" class="arrow"/>
+  <path d="M847 634 L847 690" class="arrow"/>
+  <path d="M990 727 L1110 267" class="arrow"/>
+
+  <path d="M1185 304 L1185 385" class="arrow"/>
+  <text x="1198" y="350" class="small">issues</text>
+  <path d="M1110 422 C1060 422 1060 267 1110 267" class="arrow"/>
+  <path d="M1185 459 L1185 540" class="arrow"/>
+  <text x="1198" y="503" class="small">valid</text>
+
+  <path d="M1260 577 L1352 296" class="arrow"/>
+  <path d="M1260 577 L1352 526" class="arrow"/>
+
+  <path d="M990 727 C1030 805 645 805 610 398" class="arrow-soft"/>
+  <text x="820" y="825" class="small">repeat for each planned step</text>
+
+  <rect x="70" y="864" width="230" height="76" class="note"/>
+  <text x="91" y="892" class="box-title">Why Human-in-the-Loop?</text>
+  <text x="91" y="916" class="box-text">GIS workflows can branch into CRUD,</text>
+  <text x="91" y="934" class="box-text">navigation, checks, or button actions.</text>
+
+  <rect x="1295" y="864" width="230" height="76" class="note"/>
+  <text x="1318" y="892" class="box-title">Why Trace Output?</text>
+  <text x="1318" y="916" class="box-text">Keep final JSON clean while preserving</text>
+  <text x="1318" y="934" class="box-text">evidence for debugging and reporting.</text>
+</svg>

@@ -6,14 +6,59 @@ __pycache__/
 venv/
 .venv/
 env/
+.pytest_cache/
 
 # Envs and secrets
 .env
 .env.*
 configs/local_config.yaml
+configs/local_config.json
+*.gguf
+models/gguf/
+.gitignore.local
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Runtime outputs
+logs/
+*.log
+test_output.txt
+tmp/
+reports/
+Results/
+*.docx
+
+# Local third-party sources and build products
+external/
+
+# Local model artifacts. Keep model metadata in docs instead of committing weights.
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Internal internship material (stored locally or in approved company storage)
+handover/
+docs/INTERNSHIP_FINAL_REPORT_DRAFT.md
+docs/INTERNSHIP_PROJECT_SUMMARY_FOR_HR.md
+
+# Generated intermediate data that can be rebuilt from tracked scripts/data
+data/processed/file_instruction_templates.json
+data/processed/file_level_data_with_instructions.jsonl
+
+# Root-level scratch/debug scripts
+/test_*.py
+/check_*.py
+/run_demo_debug.py
+
+# Demo-generated workflow outputs
+data/processed/agent_loop_clean_workflow.json
+data/processed/agent_loop_trace.json
+data/processed/interactive_scaffolded_workflow.json
+data/processed/plan_execute_trace.json
+data/processed/plan_execute_workflow.json
 
 # Data (do not commit large datasets)
 # data/raw/  # 包含raw数据文件夹
@@ -29,3 +74,6 @@ data/*.gpkg
 # OS
 .DS_Store
 Thumbs.db
+
+# Editor-specific settings
+.vscode/

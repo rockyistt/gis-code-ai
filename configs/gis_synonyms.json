@@ -1,0 +1,259 @@
+{
+  "method_synonyms": {
+    "Create": [
+      "create",
+      "generate",
+      "generating",
+      "generated",
+      "make",
+      "build",
+      "add",
+      "insert",
+      "new",
+      "produce",
+      "scaffold",
+      "author"
+    ],
+    "Update": [
+      "update",
+      "modify",
+      "edit",
+      "change",
+      "revise",
+      "adjust",
+      "alter",
+      "set",
+      "fill",
+      "populate"
+    ],
+    "Delete": [
+      "delete",
+      "remove",
+      "destroy",
+      "drop",
+      "clean up",
+      "cleanup"
+    ],
+    "Open Object": [
+      "open",
+      "open object",
+      "view",
+      "read",
+      "inspect",
+      "show",
+      "load"
+    ],
+    "Open Object with ID": [
+      "open by id",
+      "open with id",
+      "open object with id",
+      "load by id"
+    ],
+    "Verify Field": [
+      "verify field",
+      "check field",
+      "validate field",
+      "assert field",
+      "confirm field"
+    ],
+    "Verify": [
+      "verify",
+      "check",
+      "validate",
+      "assert",
+      "confirm"
+    ],
+    "Datamodel Check": [
+      "datamodel check",
+      "consistency check",
+      "datamodel consistency check",
+      "run check",
+      "run validation"
+    ],
+    "Switch": [
+      "switch",
+      "change view",
+      "switch view"
+    ],
+    "Switch Spatial Context": [
+      "switch spatial context",
+      "change spatial context",
+      "switch schema",
+      "change schema"
+    ],
+    "Select Tab": [
+      "select tab",
+      "open tab",
+      "go to tab"
+    ],
+    "Click Oneshot Button": [
+      "click button",
+      "click oneshot",
+      "click insert",
+      "click delete",
+      "click update",
+      "press button"
+    ],
+    "Run": [
+      "run",
+      "execute",
+      "start"
+    ]
+  },
+  "known_objects": [
+    "E MS Installatie FP",
+    "E MS Rail FP",
+    "E MS Veld FP Geleider",
+    "E MS Veld FP",
+    "E MS Eindsluiting FP",
+    "E Stationcomplex",
+    "E Station Gebouw",
+    "E Station Terrein",
+    "E MS Kabel",
+    "E HS Kabel",
+    "E LS Kabel",
+    "E MS Mof",
+    "E HS Mof",
+    "E LS Mof",
+    "E MS Verbinding",
+    "Elektra;Catalogus",
+    "Object Editor",
+    "Object Control",
+    "Stationsschema",
+    "datamodel_check",
+    "insert",
+    "delete",
+    "update",
+    "select",
+    "get",
+    "clear",
+    "lock"
+  ],
+  "object_aliases": {
+    "E MS Kabel": [
+      "ms cable",
+      "mv cable",
+      "medium voltage cable",
+      "medium-voltage cable",
+      "e ms cable",
+      "e ms kabel",
+      "ms kabel",
+      "middenspanning kabel"
+    ],
+    "E HS Kabel": [
+      "hs cable",
+      "hv cable",
+      "high voltage cable",
+      "high-voltage cable",
+      "e hs cable",
+      "e hs kabel",
+      "hs kabel",
+      "hoogspanning kabel"
+    ],
+    "E LS Kabel": [
+      "ls cable",
+      "lv cable",
+      "low voltage cable",
+      "low-voltage cable",
+      "e ls cable",
+      "e ls kabel",
+      "ls kabel",
+      "laagspanning kabel"
+    ],
+    "E MS Mof": [
+      "ms joint",
+      "mv joint",
+      "medium voltage joint",
+      "medium-voltage joint",
+      "ms mof",
+      "e ms mof"
+    ],
+    "E HS Mof": [
+      "hs joint",
+      "hv joint",
+      "high voltage joint",
+      "high-voltage joint",
+      "hs mof",
+      "e hs mof"
+    ],
+    "E LS Mof": [
+      "ls joint",
+      "lv joint",
+      "low voltage joint",
+      "low-voltage joint",
+      "ls mof",
+      "e ls mof"
+    ],
+    "E MS Installatie FP": [
+      "ms installation",
+      "medium voltage installation",
+      "ms installatie",
+      "e ms installatie",
+      "installation fp",
+      "installatie fp"
+    ],
+    "E MS Rail FP": [
+      "ms rail",
+      "medium voltage rail",
+      "rail fp",
+      "e ms rail"
+    ],
+    "E MS Veld FP": [
+      "ms field",
+      "medium voltage field",
+      "veld fp",
+      "e ms veld",
+      "bay",
+      "ms bay"
+    ],
+    "E MS Veld FP Geleider": [
+      "ms field conductor",
+      "field conductor",
+      "veld geleider",
+      "geleider",
+      "conductor"
+    ],
+    "E MS Eindsluiting FP": [
+      "ms termination",
+      "cable termination",
+      "eindsluiting",
+      "end termination"
+    ],
+    "E Stationcomplex": [
+      "station complex",
+      "substation",
+      "station"
+    ],
+    "E Station Gebouw": [
+      "station building",
+      "building",
+      "gebouw",
+      "station gebouw"
+    ],
+    "E Station Terrein": [
+      "station terrain",
+      "station site",
+      "site",
+      "terrein",
+      "station terrein"
+    ],
+    "E MS Verbinding": [
+      "ms connection",
+      "medium voltage connection",
+      "verbinding",
+      "connection"
+    ],
+    "Elektra;Catalogus": [
+      "catalogue",
+      "catalog",
+      "elektra catalog",
+      "elektra catalogue"
+    ],
+    "Stationsschema": [
+      "station schema",
+      "stations schema",
+      "network view",
+      "schema view"
+    ]
+  }
+}

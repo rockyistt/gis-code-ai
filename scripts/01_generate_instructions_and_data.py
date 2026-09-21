@@ -1,21 +1,21 @@
 ﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ç»¼åˆæŒ‡ä»¤å’Œæ•°æ®ç”Ÿæˆå™¨ - è¾“å‡º4ä¸ªåˆ†ç¦»çš„JSONLæ–‡ä»¶
+综合指令和数据生成器 - 输出4个分离的JSONL文件
 
-æ•°æ®æµï¼š
-1. åŠ è½½ parsed_workflows.jsonl
-2. ç”Ÿæˆ4ä¸ªåˆ†ç¦»çš„æ–‡ä»¶ï¼š
-   âœ“ file_level_instructions_weighted.jsonl - æ–‡ä»¶çº§æŒ‡ä»¤ï¼ˆå¸¦æƒé‡ï¼‰æ¥è‡ªold versionè„šæœ¬
-   âœ“ file_level_data.jsonl - æ–‡ä»¶çº§æ•°æ®ï¼ˆç®€åŒ–ï¼‰ æ¥è‡ª01è„šæœ¬
-   âœ“ step_level_instructions.jsonl - æ­¥éª¤çº§æŒ‡ä»¤ï¼ˆæ¸…æ™°æ ¼å¼ï¼‰ æ¥è‡ª01è„šæœ¬
-   âœ“ step_level_data.jsonl - æ­¥éª¤çº§æ•°æ®ï¼ˆå®Œæ•´JSON+ä¸Šä¸‹æ–‡ï¼‰ æ¥è‡ª01è„šæœ¬
+数据流：
+1. 加载 parsed_workflows.jsonl
+2. 生成4个分离的文件：
+   ✓ file_level_instructions_weighted.jsonl - 文件级指令（带权重）来自old version脚本
+   ✓ file_level_data.jsonl - 文件级数据（简化） 来自01脚本
+   ✓ step_level_instructions.jsonl - 步骤级指令（清晰格式） 来自01脚本
+   ✓ step_level_data.jsonl - 步骤级数据（完整JSON+上下文） 来自01脚本
 
-ç»¼åˆä¼˜åŠ¿ï¼š
-- æ–‡ä»¶çº§æŒ‡ä»¤ï¼šç»“æž„åŒ–è¡¨è¾¾ + æƒé‡æ ‡æ³¨
-- æ–‡ä»¶çº§æ•°æ®ï¼šCRUDç»Ÿè®¡ + å¯¹è±¡èšåˆ
-- æ­¥éª¤çº§æŒ‡ä»¤ï¼šè‡ªç„¶è¯­è¨€ + æ¸…æ™°çš„Stepç¼–å·
-- æ­¥éª¤çº§æ•°æ®ï¼šå®Œæ•´çš„åŽŸå§‹JSON + å‰ç½®åŽç»­æ­¥éª¤ä¸Šä¸‹æ–‡
+综合优势：
+- 文件级指令：结构化表达 + 权重标注
+- 文件级数据：CRUD统计 + 对象聚合
+- 步骤级指令：自然语言 + 清晰的Step编号
+- 步骤级数据：完整的原始JSON + 前置后继步骤上下文
 """
 
 import json
@@ -30,7 +30,7 @@ import re
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# å®šä¹‰åŠ¨ä½œè¯é›†åˆï¼ˆç”¨äºŽå…³é”®è¯æƒé‡æå–ï¼‰
+# 定义动作词集合（用于关键词权重提取）
 ACTION_WORDS = {
     "Create", "Add", "New", "Generate", "Insert", "Make",
     "Update", "Modify", "Change", "Edit", "Save", "Set",
@@ -42,14 +42,14 @@ ACTION_WORDS = {
     "Verify", "Check", "Validate", "Confirm", "Assert"
 }
 
-# å®šä¹‰ä¸Šä¸‹æ–‡è¯é›†åˆ
+# 定义上下文词集合
 CONTEXT_KEYWORDS = {
     "elektra", "database", "module", "editor", "field", "tab", "panel",
     "window", "dialog", "menu", "button", "form", "table", "list",
     "workflow", "process", "system", "app", "application", "gis"
 }
 
-# æ­¥éª¤çº§æŒ‡ä»¤æ¨¡æ¿ï¼ˆæŒ‰ (module, method) åˆ†ç±»ï¼‰
+# 步骤级指令模板（按 (module, method) 分类）
 STEP_INSTRUCTION_TEMPLATES = {
     ("Tabs", "Select Tab"): {
         "template": "Select {object} in {database}",
@@ -99,21 +99,21 @@ STEP_INSTRUCTION_TEMPLATES = {
 
 
 class KeywordWeights:
-    """å…³é”®è¯æƒé‡å®šä¹‰"""
-    CRITICAL = 3.0    # æ ¸å¿ƒåŠ¨ä½œè¯
-    HIGH = 2.0        # é‡è¦å¯¹è±¡å’Œæ–¹æ³•
-    MEDIUM = 1.5      # ä¿®é¥°è¯­å’Œä¸Šä¸‹æ–‡
-    NORMAL = 1.0      # ä¸€èˆ¬è¯æ±‡
-    CONTEXT_DB = 1.8  # æ•°æ®åº“ä¸Šä¸‹æ–‡
-    CONTEXT_VARIANT = 1.6  # æ–¹æ³•å˜ä½“ä¸Šä¸‹æ–‡
-    CONTEXT_ID = 1.4  # å¯¹è±¡IDä¸Šä¸‹æ–‡
-    CONTEXT_DATA = 1.2  # æµ‹è¯•æ•°æ®ä¸Šä¸‹æ–‡
+    """关键词权重定义"""
+    CRITICAL = 3.0    # 核心动作词
+    HIGH = 2.0        # 重要对象和方法
+    MEDIUM = 1.5      # 修饰语和上下文
+    NORMAL = 1.0      # 一般词汇
+    CONTEXT_DB = 1.8  # 数据库上下文
+    CONTEXT_VARIANT = 1.6  # 方法变体上下文
+    CONTEXT_ID = 1.4  # 对象ID上下文
+    CONTEXT_DATA = 1.2  # 测试数据上下文
 
 
 class TemplateInstructionExtractor:
-    """åŸºäºŽ (module, method) æ¨¡æ¿çš„æ­¥éª¤çº§æŒ‡ä»¤æå–å™¨"""
+    """基于 (module, method) 模板的步骤级指令提取器"""
 
-    # å¯é€‰å­—æ®µï¼šè‹¥è¿™äº›å­—æ®µä¸ºç©ºåˆ™å¯ç”¨ fallback_template
+    # 可选字段：若这些字段为空则可用 fallback_template
     OPTIONAL_FIELDS = {"station_nummer", "spatial_context", "field_name", "fields", "values", "id_hv"}
 
     def __init__(self):
@@ -133,10 +133,8 @@ class TemplateInstructionExtractor:
     def _clean_database(self, value) -> str:
         return self._clean_text(value).replace(":", "").strip()
 
-    # ---------- test_data å­—æ®µæå– ----------
-
     def extract_station_nummer(self, test_data) -> str:
-        """ä»ŽåµŒå¥— test_data ä¸­æå– Station Nummerï¼›ä¸å­˜åœ¨æ—¶è¿”å›žç©ºå­—ç¬¦ä¸²ã€‚"""
+        """从嵌套 test_data 中提取 Station Nummer；不存在时返回空字符串。"""
         if not isinstance(test_data, dict):
             return ""
         for section_value in test_data.values():
@@ -151,7 +149,7 @@ class TemplateInstructionExtractor:
         return ""
 
     def extract_spatial_context(self, test_data) -> str:
-        """ä»Ž test_data editor èŠ‚ä¸­æå– Spatial Context å€¼ã€‚"""
+        """从 test_data editor 节中提取 Spatial Context 值。"""
         if not isinstance(test_data, dict):
             return ""
         for section_value in test_data.values():
@@ -166,7 +164,7 @@ class TemplateInstructionExtractor:
         return ""
 
     def extract_verify_field(self, test_data) -> str:
-        """ä»Ž test_data editor èŠ‚ä¸­æŽ¨æ–­è¢«éªŒè¯çš„å­—æ®µåã€‚"""
+        """从 test_data editor 节中推断被验证的字段名。"""
         if not isinstance(test_data, dict):
             return ""
         editor = test_data.get("editor", {})
@@ -181,7 +179,7 @@ class TemplateInstructionExtractor:
         return ""
 
     def extract_crud_fields_values(self, test_data, operation: str) -> Tuple[str, str]:
-        """ä»Ž test_data çš„ create/update èŠ‚æå–å­—æ®µåå’Œå¯¹åº”å€¼ï¼ˆå„æœ€å¤š3ä¸ªï¼‰ã€‚"""
+        """从 test_data 的 create/update 节提取字段名和对应值（各最多3个）。"""
         if not isinstance(test_data, dict):
             return "", ""
         section = test_data.get(operation.lower(), {})
@@ -200,10 +198,8 @@ class TemplateInstructionExtractor:
             return "", ""
         return ", ".join(fields[:3]), ", ".join(values[:3])
 
-    # ---------- ä¸Šä¸‹æ–‡æž„å»ºä¸ŽæŒ‡ä»¤æ¸²æŸ“ ----------
-
     def build_context(self, step: Dict) -> Dict[str, Any]:
-        """æŠŠä¸€è¡Œ step æ•°æ®æ˜ å°„ä¸ºæ¨¡æ¿æ‰€éœ€çš„ä¸Šä¸‹æ–‡å­—å…¸ã€‚"""
+        """把一行 step 数据映射为模板所需的上下文字典。"""
         method = self._clean_text(step.get("method", ""))
         test_data = step.get("test_data", {})
 
@@ -221,7 +217,7 @@ class TemplateInstructionExtractor:
             "method":         method,
             "command":        self._clean_text(step.get("command", "")),
             "station_nummer": self.extract_station_nummer(test_data),
-            "spatial_context":self.extract_spatial_context(test_data),
+            "spatial_context": self.extract_spatial_context(test_data),
             "field_name":     self.extract_verify_field(test_data) or self._clean_text(step.get("command", "")),
             "fields":         fields_str,
             "values":         values_str,
@@ -229,16 +225,16 @@ class TemplateInstructionExtractor:
         }
 
     def render_instruction(self, step: Dict) -> str:
-        """æ ¹æ® (module, method) é€‰æ‹©æ¨¡æ¿å¹¶æ¸²æŸ“æŒ‡ä»¤ï¼›å­—æ®µç¼ºå¤±æ—¶è‡ªåŠ¨é™çº§åˆ° fallback_templateã€‚"""
+        """根据 (module, method) 选择模板并渲染指令；字段缺失时自动降级到 fallback_template。"""
         module = self._clean_text(step.get("module", ""))
         method = self._clean_text(step.get("method", ""))
-        pair   = (module, method)
+        pair = (module, method)
 
         template_info = self.templates.get(pair)
         if not template_info:
-            # æœªæ³¨å†Œçš„ç»„åˆï¼šç”¨ method + object + database æž„å»ºé»˜è®¤æŒ‡ä»¤
+            # 未注册的组合：用 method + object + database 构建默认指令
             obj = self._clean_text(step.get("object", ""))
-            db  = self._clean_database(step.get("database", ""))
+            db = self._clean_database(step.get("database", ""))
             parts = [method] if method else ["Process"]
             if obj:
                 parts.append(obj)
@@ -246,11 +242,11 @@ class TemplateInstructionExtractor:
                 parts.append(f"in {db}")
             return " ".join(parts)
 
-        context  = self.build_context(step)
+        context = self.build_context(step)
         template = template_info.get("template", "")
         fallback = template_info.get("fallback_template")
 
-        # è‹¥ä¸»æ¨¡æ¿åŒ…å«æŸä¸ªå¯é€‰å­—æ®µä½†è¯¥å­—æ®µä¸ºç©ºï¼Œåˆ‡æ¢åˆ° fallback
+        # 若主模板包含某个可选字段但该字段为空，切换到 fallback
         if fallback:
             for field in self.OPTIONAL_FIELDS:
                 if "{" + field + "}" in template and not context.get(field):
@@ -268,8 +264,8 @@ class TemplateInstructionExtractor:
             return f"{method} {context.get('object', '')} in {context.get('database', '')}".strip()
 
     def extract_context_for_weights(self, step: Dict) -> Dict[str, Any]:
-        """æå–ä¸Ž KeywordWeightExtractor å…¼å®¹çš„ä¸Šä¸‹æ–‡å­—å…¸ã€‚"""
-        db     = self._clean_database(step.get("database", ""))
+        """提取与 KeywordWeightExtractor 兼容的上下文字典。"""
+        db = self._clean_database(step.get("database", ""))
         obj_id = self._clean_text(step.get("object_id", ""))
         method = self._clean_text(step.get("method", ""))
 
@@ -286,34 +282,32 @@ class TemplateInstructionExtractor:
             context["object_id"] = obj_id
             weights_list.append(KeywordWeights.CONTEXT_ID)
 
-        context["has_id"]        = bool(obj_id)
+        context["has_id"] = bool(obj_id)
         context["context_score"] = round(sum(weights_list) / len(weights_list), 2) if weights_list else 0.0
         return context
 
 
 class ObjectNameParser:
-    """è§£æžå¯¹è±¡åï¼Œè¯†åˆ«å¤åˆè¯ç»„"""
-    
+    """解析对象名，识别复合词组"""
+
     def __init__(self):
-        """åˆå§‹åŒ–å¯¹è±¡åè§£æžå™¨"""
-        # ä»Žå·¥ä½œæµä¸­æå–æ‰€æœ‰å”¯ä¸€çš„å¯¹è±¡å
+        """初始化对象名解析器"""
         self.known_objects = set()
-    
+
     def add_object(self, obj_name: str):
-        """æ·»åŠ å·²çŸ¥çš„å¯¹è±¡å"""
+        """添加已知的对象名"""
         if not isinstance(obj_name, str):
             obj_name = str(obj_name) if obj_name else ""
-        
+
         obj_name = obj_name.strip()
         if obj_name and len(obj_name) > 2:
             self.known_objects.add(obj_name)
-    
+
     def find_object_name(self, text: str) -> Optional[str]:
-        """åœ¨æ–‡æœ¬ä¸­æŸ¥æ‰¾å¯¹è±¡åï¼Œè¿”å›žæœ€é•¿åŒ¹é…çš„å¯¹è±¡å"""
+        """在文本中查找对象名，返回最长匹配的对象名"""
         if not isinstance(text, str):
             text = str(text) if text else ""
-        
-        # æŒ‰é•¿åº¦é™åºæŽ’åˆ—ï¼Œä¼˜å…ˆåŒ¹é…é•¿çš„å¯¹è±¡å
+
         sorted_objects = sorted(self.known_objects, key=len, reverse=True)
         for obj in sorted_objects:
             if obj in text:
@@ -322,97 +316,70 @@ class ObjectNameParser:
 
 
 class KeywordWeightExtractor:
-    """ä»ŽæŒ‡ä»¤ä¸­æå–å…³é”®è¯å¹¶åˆ†é…æƒé‡"""
-    
+    """从指令中提取关键词并分配权重"""
+
     def __init__(self, object_parser: Optional[ObjectNameParser] = None):
-        """åˆå§‹åŒ–å…³é”®è¯æå–å™¨"""
+        """初始化关键词提取器"""
         self.action_words = ACTION_WORDS
         self.context_keywords = CONTEXT_KEYWORDS
         self.object_parser = object_parser or ObjectNameParser()
-    
-    def extract_keywords_with_weights(self, instruction: str, context: Optional[Dict[str, Any]] = None) -> List[Tuple[str, float]]:
-        """
-        ä»ŽæŒ‡ä»¤æ–‡æœ¬ä¸­æå–å…³é”®è¯åŠå…¶æƒé‡ï¼Œæ”¯æŒä¸Šä¸‹æ–‡å­—æ®µ
-        
-        Args:
-            instruction: æŒ‡ä»¤æ–‡æœ¬ï¼ˆå¦‚ "Create MS Kabel"ï¼‰
-            context: å¯é€‰çš„ä¸Šä¸‹æ–‡å­—å…¸ï¼ˆæ¥è‡ª ContextualFieldExtractorï¼‰
-            
-        Returns:
-            [(keyword, weight), ...] åˆ—è¡¨ï¼ŒæŒ‰æƒé‡é™åºæŽ’åˆ—
-        """
-        # ç¡®ä¿ instruction æ˜¯å­—ç¬¦ä¸²
+
+    def extract_keywords_with_weights(
+        self, instruction: str, context: Optional[Dict[str, Any]] = None
+    ) -> List[Tuple[str, float]]:
+        """从指令文本中提取关键词及其权重，支持上下文字段"""
         if not isinstance(instruction, str):
             instruction = str(instruction) if instruction else ""
-        
+
         keywords = []
         remaining_text = instruction
-        
-        # 1. å…ˆå°è¯•è¯†åˆ«å¤åˆå¯¹è±¡åï¼ˆå¦‚"MS Kabel"ã€"MS Aardingstrafo FP"ï¼‰
+
         object_name = self.object_parser.find_object_name(instruction)
         if object_name:
             keywords.append((object_name, KeywordWeights.HIGH))
             remaining_text = instruction.replace(object_name, '', 1).strip()
-        
-        # 2. å¤„ç†å‰©ä½™çš„token
+
         tokens = remaining_text.split()
         for token in tokens:
-            # æ¸…é™¤æ ‡ç‚¹ç¬¦å·
             clean_token = re.sub(r'[^\w\s]', '', token)
             if not clean_token:
                 continue
-            
-            # è·³è¿‡å·²ç»æ·»åŠ çš„å¯¹è±¡åä¸­çš„è¯
+
             if object_name and clean_token in object_name.split():
                 continue
-            
-            # æ£€æŸ¥æ˜¯å¦æ˜¯åŠ¨ä½œè¯ï¼ˆåŒºåˆ†å¤§å°å†™ï¼‰
+
             is_action = False
             for action in self.action_words:
                 if clean_token.lower() == action.lower():
                     is_action = True
                     break
-            
+
             if is_action:
                 keywords.append((clean_token, KeywordWeights.CRITICAL))
-            # æ£€æŸ¥æ˜¯å¦æ˜¯ä¸Šä¸‹æ–‡è¯
             elif clean_token.lower() in self.context_keywords:
                 keywords.append((clean_token, KeywordWeights.MEDIUM))
-            # å…¶ä»–è¯ï¼ˆæŽ’é™¤æ•°å­—ï¼‰
             elif len(clean_token) > 2 and not clean_token.isdigit():
                 keywords.append((clean_token, KeywordWeights.HIGH))
-        
-        # 3. æ·»åŠ æ¥è‡ªcontextçš„å…³é”®è¯ï¼ˆå¦‚æžœæä¾›äº†contextï¼Œä»…æ·»åŠ ç®€æ´çš„å­—æ®µï¼‰
+
         if context:
             if context.get('database'):
                 keywords.append((f"[DB:{context['database']}]", KeywordWeights.CONTEXT_DB))
-            
+
             if context.get('method_variant'):
                 keywords.append((context['method_variant'], KeywordWeights.CONTEXT_VARIANT))
-            
+
             if context.get('object_id'):
                 keywords.append(('[ID]', KeywordWeights.CONTEXT_ID))
-            
-            # ä¸æ·»åŠ  test_data æƒé‡ - å¤ªå¤æ‚äº†
 
-        
-        # æŒ‰æƒé‡é™åºæŽ’åˆ—
         keywords.sort(key=lambda x: -x[1])
         return keywords
-    
-    def get_keyword_weights_dict(self, instruction: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        èŽ·å–æŒ‡ä»¤çš„å®Œæ•´å…³é”®è¯æƒé‡ä¿¡æ¯ï¼Œæ”¯æŒä¸Šä¸‹æ–‡å­—æ®µ
-        
-        Args:
-            instruction: æŒ‡ä»¤æ–‡æœ¬
-            context: å¯é€‰çš„ä¸Šä¸‹æ–‡å­—å…¸
-            
-        Returns:
-            åŒ…å«å…³é”®è¯ã€æƒé‡å’Œç»Ÿè®¡çš„å­—å…¸
-        """
+
+    def get_keyword_weights_dict(
+        self, instruction: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """获取指令的完整关键词权重信息，支持上下文字段"""
         keywords = self.extract_keywords_with_weights(instruction, context)
-        
+
         if not keywords:
             return {
                 "keywords": [],
@@ -420,7 +387,7 @@ class KeywordWeightExtractor:
                 "max_weight": 0.0,
                 "keyword_count": 0
             }
-        
+
         weights = [w for _, w in keywords]
         return {
             "keywords": [[kw, w] for kw, w in keywords],
@@ -431,10 +398,9 @@ class KeywordWeightExtractor:
 
 
 class StructuredInstructionTemplate:
-    """ç»“æž„åŒ–æŒ‡ä»¤æ¨¡æ¿ - åŠ¨ä½œ+å®¾è¯­+çŠ¶è¯­"""
-    
+    """结构化指令模板 - 动作+宾语+状语"""
+
     def __init__(self):
-        # åŠ¨ä½œè¯åŠå…¶åŒä¹‰è¯
         self.action_synonyms = {
             "Create": ["Create", "Add", "Generate", "Insert"],
             "Update": ["Update", "Modify", "Configure", "Edit"],
@@ -445,35 +411,29 @@ class StructuredInstructionTemplate:
             "Click": ["Click", "Press", "Activate"],
             "Select": ["Select", "Choose", "Pick"],
         }
-    
+
     def get_action_variant(self, action: str, use_variant: bool = False) -> str:
-        """èŽ·å–åŠ¨ä½œè¯ï¼ˆå¯é€‰ä½¿ç”¨åŒä¹‰è¯ï¼‰"""
+        """获取动作词（可选使用同义词）"""
         if use_variant and action in self.action_synonyms:
             return random.choice(self.action_synonyms[action])
         return action
 
 
 class WeightedInstructionGenerator:
-    """
-    ç»¼åˆæŒ‡ä»¤ç”Ÿæˆå™¨
-    - æ–‡ä»¶çº§æŒ‡ä»¤ï¼šå¸¦æƒé‡çš„ç»“æž„åŒ–è¡¨è¾¾ï¼ˆæ¥è‡ªold versionï¼‰
-    - æ–‡ä»¶çº§æ•°æ®ï¼šç®€åŒ–çš„å…ƒæ•°æ®å’Œç»Ÿè®¡ï¼ˆæ¥è‡ª01ï¼‰
-    - æ­¥éª¤çº§æŒ‡ä»¤ï¼šæ¸…æ™°çš„Step X/Yæ ¼å¼ï¼ˆæ¥è‡ª01ï¼‰+ å…³é”®è¯æƒé‡ + ä¸Šä¸‹æ–‡å­—æ®µ
-    - æ­¥éª¤çº§æ•°æ®ï¼šå®Œæ•´çš„åŽŸå§‹JSON+ä¸Šä¸‹æ–‡ï¼ˆæ¥è‡ª01ï¼‰
-    """
-    
+    """综合指令生成器"""
+
     def __init__(self, use_variants: bool = False, object_parser: Optional[ObjectNameParser] = None):
         self.templates = StructuredInstructionTemplate()
         self.use_variants = use_variants
         self.object_parser = object_parser or ObjectNameParser()
         self.keyword_extractor = KeywordWeightExtractor(self.object_parser)
-        self.template_extractor = TemplateInstructionExtractor()  # åŸºäºŽæ¨¡æ¿çš„æŒ‡ä»¤æå–å™¨
-    
+        self.template_extractor = TemplateInstructionExtractor()
+
     def _clean_object_name(self, obj: str) -> str:
-        """æ¸…ç†å¯¹è±¡å - ç§»é™¤E/L/HVå‰ç¼€"""
+        """清理对象名 - 移除E/L/HV前缀"""
         if not isinstance(obj, str):
             obj = str(obj) if obj else ""
-        
+
         obj = obj.replace(':', '').strip()
         if obj.startswith('E '):
             obj = obj[2:]
@@ -482,15 +442,15 @@ class WeightedInstructionGenerator:
         elif obj.startswith('HV '):
             obj = obj[3:]
         return obj
-    
+
     def _is_valid_object(self, obj: str) -> bool:
-        """åˆ¤æ–­æ˜¯å¦ä¸ºæœ‰æ•ˆçš„ä¸šåŠ¡å¯¹è±¡ï¼ˆæŽ’é™¤UIå…ƒç´ å’Œä¼ªå¯¹è±¡ï¼‰"""
+        """判断是否为有效的业务对象（排除UI元素和伪对象）"""
         if not isinstance(obj, str):
             obj = str(obj) if obj else ""
-        
+
         obj_lower = obj.lower()
         invalid = {
-            'object', 'object editor', 'object control', 'default', 
+            'object', 'object editor', 'object control', 'default',
             'select', 'button', 'tab', 'field', 'tabs', 'routes',
             'none', 'n/a', 'na', '', 'switch', 'click', 'update',
             'insert', 'get', 'hierarchy viewer', 'elektra;catalogus',
@@ -504,38 +464,12 @@ class WeightedInstructionGenerator:
         if any(c in obj for c in [';', '|', '$', '%']):
             return False
         return True
-    
-    def _categorize_operation(self, method: str) -> str:
-        """å°†æ“ä½œæ–¹æ³•åˆ†ç±»ä¸ºæ ‡å‡†æ“ä½œç±»åž‹"""
-        # ç¡®ä¿ method æ˜¯å­—ç¬¦ä¸²
-        if not isinstance(method, str):
-            method = str(method) if method else ""
-        
-        method_lower = method.lower()
-        
-        if "create" in method_lower:
-            return "Create"
-        elif "update" in method_lower or "edit" in method_lower:
-            return "Update"
-        elif "delete" in method_lower or "remove" in method_lower:
-            return "Delete"
-        elif "verify" in method_lower or "check" in method_lower or "validate" in method_lower:
-            return "Verify"
-        elif "open" in method_lower or "access" in method_lower or "view" in method_lower:
-            return "Open"
-        else:
-            return "Other"
-    
-    # ========== æ–‡ä»¶çº§æŒ‡ä»¤ç”Ÿæˆ ==========
+
     def generate_file_instruction_with_weights(self, workflow: Dict) -> Dict[str, Any]:
-        """
-        ç”Ÿæˆæ–‡ä»¶çº§æŒ‡ä»¤ï¼ˆå¸¦æƒé‡ï¼‰
-        é€»è¾‘æ¥è‡ª: 001_generate_instructions_file_old version.py
-        """
+        """生成文件级指令（带权重）"""
         steps = workflow.get('steps', [])
         app = workflow.get('test_app', 'GIS system')
-        
-        # å¦‚æžœæ²¡æœ‰stepsï¼Œè¿”å›žé»˜è®¤å€¼
+
         if not steps:
             return {
                 "instruction": f"Test workflow in {app}",
@@ -544,43 +478,37 @@ class WeightedInstructionGenerator:
                 "objects": [],
                 "databases": []
             }
-        
-        # æ”¶é›†å…³é”®ä¿¡æ¯
+
         actions = set()
         objects = set()
         databases = set()
-        
+
         for step in steps:
             method = step.get('method', '')
             if not isinstance(method, str):
                 method = str(method) if method else ""
-            else:
-                method = method.strip()
-            
+
             obj_raw = step.get('object', '')
             if not isinstance(obj_raw, str):
                 obj_raw = str(obj_raw) if obj_raw else ""
             obj = self._clean_object_name(obj_raw)
-            
+
             db = step.get('database', '')
             if not isinstance(db, str):
                 db = str(db) if db else ""
             db = db.replace(':', '').strip()
-            
+
             if method in ['Create', 'Update', 'Delete']:
                 actions.add(method.lower())
-            
-            # ä½¿ç”¨æ”¹è¿›çš„å¯¹è±¡éªŒè¯
+
             if obj and self._is_valid_object(obj):
                 objects.add(obj)
-            
+
             if db:
                 databases.add(db)
-        
-        # æž„å»ºæ–‡ä»¶çº§æŒ‡ä»¤
+
         action_str = ", ".join(sorted(actions)) if actions else "manage"
-        
-        # æ€»æ˜¯åˆ—ä¸¾å¯¹è±¡ï¼ˆæœ€å¤šæ˜¾ç¤º5ä¸ªï¼‰
+
         objects_list = list(objects)[:5]
         if objects_list:
             if len(objects_list) == 1:
@@ -591,373 +519,268 @@ class WeightedInstructionGenerator:
                 obj_str = ", ".join(objects_list[:-1]) + f" and {objects_list[-1]}"
         else:
             obj_str = "workflow objects"
-        
+
         db_str = ""
         if databases:
             db = list(databases)[0]
             db_str = f" in {db}"
-        
+
         instruction = f"{action_str.capitalize()} {obj_str}{db_str} in {app}"
-        
-        # æž„å»ºæƒé‡ä¿¡æ¯
-        weights = []
-        for action in actions:
-            weights.append((action, KeywordWeights.CRITICAL))
-        for obj in objects_list:
-            weights.append((obj, KeywordWeights.HIGH))
-        if databases:
-            weights.append((list(databases)[0], KeywordWeights.MEDIUM))
-        
+
+        keyword_weights_info = self.keyword_extractor.get_keyword_weights_dict(instruction)
+
         return {
             "instruction": instruction,
-            "weights": weights,
-            "actions": list(actions),
+            "weights": keyword_weights_info.get("keywords", []),
+            "avg_weight": keyword_weights_info.get("avg_weight", 0.0),
+            "max_weight": keyword_weights_info.get("max_weight", 0.0),
+            "actions": sorted(actions),
             "objects": objects_list,
-            "databases": list(databases)
+            "databases": sorted(databases),
         }
-    
-    # ========== æ–‡ä»¶çº§æ•°æ®ç”Ÿæˆ ==========
-    def generate_file_data(self, workflow: Dict, file_id: str) -> Dict[str, Any]:
-        """
-        ç”Ÿæˆæ–‡ä»¶çº§æ•°æ®ï¼ˆç›´æŽ¥ä½¿ç”¨åŽŸå§‹workflow + file_idï¼‰
-        """
-        result = workflow.copy()
-        result['file_id'] = file_id
-        return result
-    
-    # ========== æ­¥éª¤çº§æŒ‡ä»¤ç”Ÿæˆ ==========
-    def generate_step_instruction(self, step: Dict, step_index: int, total_steps: int) -> Dict[str, Any]:
-        """
-        ä½¿ç”¨æ¨¡æ¿ç³»ç»Ÿç”Ÿæˆæ­¥éª¤çº§æŒ‡ä»¤ã€‚
 
-        è¿”å›žæ ¼å¼:
-        {
-            "instruction": "Create MS Kabel in elektra",
-            "context": {"database": "elektra", "object_id": "Passed", "has_id": true, "context_score": 1.8}
-        }
-        """
-        # è®°å½•å¯¹è±¡åä¾›å…³é”®è¯æƒé‡æå–å™¨ä½¿ç”¨
-        obj = step.get('object', '')
-        if not isinstance(obj, str):
-            obj = str(obj) if obj else ''
-        obj = obj.strip()
-        if obj and obj.lower() not in ['object', 'object editor', 'default']:
-            self.object_parser.add_object(obj)
+    def generate_step_instruction(self, step: Dict, step_index: int, total_steps: int) -> str:
+        """生成步骤级指令（纯文本）"""
+        base_instruction = self.template_extractor.render_instruction(step)
+        return f"Step {step_index + 1}/{total_steps}: {base_instruction}"
 
-        instruction = self.template_extractor.render_instruction(step)
-        context     = self.template_extractor.extract_context_for_weights(step)
+    def generate_step_instruction_with_weights(
+        self, step: Dict, step_index: int, total_steps: int
+    ) -> Dict[str, Any]:
+        """生成步骤级指令（带权重+上下文字段）"""
+        base_instruction = self.template_extractor.render_instruction(step)
+        context = self.template_extractor.extract_context_for_weights(step)
+        keyword_info = self.keyword_extractor.get_keyword_weights_dict(base_instruction, context)
 
         return {
-            "instruction": instruction,
+            "step_index": step_index,
+            "step_number": f"Step {step_index + 1}/{total_steps}",
+            "instruction": base_instruction,
+            "keywords": keyword_info.get("keywords", []),
+            "avg_weight": keyword_info.get("avg_weight", 0.0),
+            "max_weight": keyword_info.get("max_weight", 0.0),
             "context": context,
         }
 
-    
-    def generate_step_instruction_with_weights(self, step: Dict, step_index: int, total_steps: int) -> Dict[str, Any]:
-        """
-        ç”Ÿæˆæ­¥éª¤çº§æŒ‡ä»¤åŠå…¶å…³é”®è¯æƒé‡ã€‚
+    def generate_file_data(self, workflow: Dict) -> Dict[str, Any]:
+        """生成文件级数据（简化）"""
+        steps = workflow.get('steps', [])
+        file_id = workflow.get('file_id', '')
+        test_app = workflow.get('test_app', '')
+        test_cases = workflow.get('test_cases', [])
 
-        Returns:
-            {
-                "instruction": "Create MS Kabel in elektra",
-                "keyword_weights": {
-                    "keywords": [["Create", 3.0], ["MS Kabel", 2.0], ["[DB:elektra]", 1.8]],
-                    "avg_weight": 2.27,
-                    "max_weight": 3.0,
-                    "keyword_count": 3
-                },
-                "context": {"database": "elektra", "has_id": false, "context_score": 1.8}
-            }
-        """
-        instr_result = self.generate_step_instruction(step, step_index, total_steps)
+        crud_stats = {"create": 0, "read": 0, "update": 0, "delete": 0}
+        objects_set = set()
+        databases_set = set()
 
-        keyword_weights = self.keyword_extractor.get_keyword_weights_dict(
-            instr_result["instruction"],
-            instr_result["context"]
-        )
+        for step in steps:
+            method = step.get('method', '').lower()
+            obj = step.get('object', '')
+            db = step.get('database', '')
+
+            if 'create' in method:
+                crud_stats['create'] += 1
+            elif 'read' in method or 'open' in method or 'view' in method or 'select' in method:
+                crud_stats['read'] += 1
+            elif 'update' in method or 'edit' in method or 'modify' in method:
+                crud_stats['update'] += 1
+            elif 'delete' in method or 'remove' in method:
+                crud_stats['delete'] += 1
+
+            if obj:
+                objects_set.add(self._clean_object_name(obj))
+            if db:
+                databases_set.add(db.replace(':', '').strip())
 
         return {
-            "instruction":    instr_result["instruction"],
-            "keyword_weights": keyword_weights,
-            "context":        instr_result["context"],
+            "file_id": file_id,
+            "test_app": test_app,
+            "test_cases": test_cases,
+            "total_steps": len(steps),
+            "crud_stats": crud_stats,
+            "unique_objects": list(objects_set),
+            "unique_databases": list(databases_set),
+            "steps": steps,
         }
-    
-    # ========== æ­¥éª¤çº§æ•°æ®ç”Ÿæˆ ==========
-    def generate_step_data(self, step: Dict, step_index: int, file_id: str) -> Dict[str, Any]:
-        """
-        ç”Ÿæˆæ­¥éª¤çº§æ•°æ®ï¼ˆç›´æŽ¥ä½¿ç”¨åŽŸå§‹step + file_id + step_indexï¼‰
-        """
-        step_data_item = step.copy()
-        step_data_item["file_id"] = file_id
-        step_data_item["step_index"] = step_index
-        return step_data_item
+
+    def generate_step_data(
+        self, workflow: Dict, step_index: int
+    ) -> Dict[str, Any]:
+        """生成步骤级数据（完整JSON+上下文）"""
+        steps = workflow.get('steps', [])
+        if step_index >= len(steps):
+            return {}
+
+        step = steps[step_index]
+        total_steps = len(steps)
+
+        prev_step = steps[step_index - 1] if step_index > 0 else None
+        next_step = steps[step_index + 1] if step_index < total_steps - 1 else None
+
+        return {
+            "file_id": workflow.get('file_id', ''),
+            "test_app": workflow.get('test_app', ''),
+            "step_index": step_index,
+            "step_number": f"Step {step_index + 1}/{total_steps}",
+            "current_step": step,
+            "previous_step": prev_step,
+            "next_step": next_step,
+            "total_steps": total_steps,
+            "test_data": step.get('test_data', {}),
+        }
 
 
-def load_parsed_workflows(filepath: str) -> List[Dict]:
-    """åŠ è½½ parsed_workflows.jsonl"""
-    logger.info(f"ðŸ“‚ åŠ è½½ {filepath}...")
+def load_parsed_workflows(input_path: str) -> List[Dict]:
+    """加载 parsed_workflows.jsonl 文件"""
     workflows = []
-    
-    with open(filepath, 'r', encoding='utf-8') as f:
-        for line_num, line in enumerate(f, 1):
-            try:
-                workflow = json.loads(line)
-                workflows.append(workflow)
-            except json.JSONDecodeError as e:
-                logger.warning(f"ç¬¬ {line_num} è¡Œ JSON è§£æžå¤±è´¥: {e}")
-                continue
-    
-    logger.info(f"âœ… åŠ è½½å®Œæˆ: {len(workflows)} ä¸ªå·¥ä½œæµ")
+    try:
+        with open(input_path, 'r', encoding='utf-8') as f:
+            for line_num, line in enumerate(f, 1):
+                try:
+                    workflow = json.loads(line)
+                    workflows.append(workflow)
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Line {line_num}: JSON parse error - {e}")
+    except FileNotFoundError:
+        logger.error(f"Input file not found: {input_path}")
+        return []
+    except Exception as e:
+        logger.error(f"Error loading file: {e}")
+        return []
+
+    logger.info(f"Loaded {len(workflows)} workflows from {input_path}")
     return workflows
 
 
-def generate_all_instructions(workflows: List[Dict]) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
-    """ç”Ÿæˆæ‰€æœ‰æŒ‡ä»¤å’Œæ•°æ®ï¼ˆåˆ†ç¦»è¾“å‡ºï¼‰"""
-    logger.info("\nðŸ“Š ç”ŸæˆæŒ‡ä»¤ä¸Žæ•°æ®...")
-    
-    # ç¬¬ä¸€æ­¥ï¼šæ‰«ææ‰€æœ‰å·¥ä½œæµï¼Œæå–æ‰€æœ‰å¯¹è±¡å
-    object_parser = ObjectNameParser()
-    logger.info("ðŸ“‹ ç¬¬1æ­¥: æ‰«ææ‰€æœ‰å¯¹è±¡å...")
-    for workflow in workflows:
-        for step in workflow.get('steps', []):
-            obj = step.get('object', '').strip()
-            if obj:
-                object_parser.add_object(obj)
-    logger.info(f"âœ“ å·²è¯†åˆ« {len(object_parser.known_objects)} ä¸ªå”¯ä¸€å¯¹è±¡")
-    
-    # ç¬¬äºŒæ­¥ï¼šç”ŸæˆæŒ‡ä»¤å’Œæ•°æ®
-    generator = WeightedInstructionGenerator(use_variants=False, object_parser=object_parser)
+def generate_all_instructions(
+    workflows: List[Dict], generator: WeightedInstructionGenerator
+) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
+    """生成文件级和步骤级的指令与数据"""
     file_instructions = []
-    file_data = []
+    file_data_list = []
     step_instructions = []
-    step_data = []
-    
-    for workflow in tqdm(workflows, desc="å¤„ç†å·¥ä½œæµ"):
-        file_id = workflow.get('file_id')
+    step_data_list = []
+
+    for workflow in tqdm(workflows, desc="Generating instructions"):
+        # 文件级
+        file_instr = generator.generate_file_instruction_with_weights(workflow)
+        file_instructions.append(file_instr)
+
+        file_data = generator.generate_file_data(workflow)
+        file_data_list.append(file_data)
+
+        # 步骤级
         steps = workflow.get('steps', [])
         total_steps = len(steps)
-        
-        if total_steps == 0:
-            continue
-        
-        # ============ æ–‡ä»¶çº§æŒ‡ä»¤ï¼ˆå¸¦æƒé‡ï¼‰ ============
-        file_instr_result = generator.generate_file_instruction_with_weights(workflow)
-        
-        # è°ƒè¯•ï¼šæ£€æŸ¥ç»“æžœ
-        if not file_instr_result:
-            logger.error(f"âš ï¸  æ–‡ä»¶ {file_id} ç”Ÿæˆå¤±è´¥")
-            continue
-        
-        file_instructions.append({
-            "file_id": file_id,
-            "instruction": file_instr_result.get("instruction", ""),
-            "keywords": file_instr_result.get("keywords", []),
-            "actions": file_instr_result.get("actions", []),
-            "objects": file_instr_result.get("objects", []),
-            "databases": file_instr_result.get("databases", [])
-        })
-        
-        # ============ æ–‡ä»¶çº§æ•°æ® ============
-        file_data.append(generator.generate_file_data(workflow, file_id))
-        
-        # ============ æ­¥éª¤çº§æŒ‡ä»¤å’Œæ•°æ® ============
-        for step_index, step in enumerate(steps):
-            # æ­¥éª¤çº§æŒ‡ä»¤ï¼ˆå¸¦æƒé‡ + ä¸Šä¸‹æ–‡ï¼‰
-            step_instr_with_weights = generator.generate_step_instruction_with_weights(step, step_index, total_steps)
-            step_instructions.append({
-                "file_id": file_id,
-                "step_index": step_index,
-                "instruction": step_instr_with_weights["instruction"],
-                "keyword_weights": step_instr_with_weights["keyword_weights"],
-                "context": step_instr_with_weights.get("context", {})
-            })
-            
-            # æ­¥éª¤çº§æ•°æ®
-            step_data.append(generator.generate_step_data(step, step_index, file_id))
-    
-    logger.info(f"âœ… ç”Ÿæˆå®Œæˆ:")
-    logger.info(f"   - æ–‡ä»¶çº§æŒ‡ä»¤: {len(file_instructions)}")
-    logger.info(f"   - æ–‡ä»¶çº§æ•°æ®: {len(file_data)}")
-    logger.info(f"   - æ­¥éª¤çº§æŒ‡ä»¤: {len(step_instructions)}")
-    logger.info(f"   - æ­¥éª¤çº§æ•°æ®: {len(step_data)}")
-    
-    return file_instructions, file_data, step_instructions, step_data
+
+        for step_idx in range(total_steps):
+            step_instr = generator.generate_step_instruction_with_weights(
+                steps[step_idx], step_idx, total_steps
+            )
+            step_instructions.append(step_instr)
+
+            step_data = generator.generate_step_data(workflow, step_idx)
+            step_data_list.append(step_data)
+
+    logger.info(f"Generated {len(file_instructions)} file-level entries")
+    logger.info(f"Generated {len(step_instructions)} step-level entries")
+
+    return file_instructions, file_data_list, step_instructions, step_data_list
 
 
 def save_instructions(
+    output_dir: str,
     file_instructions: List[Dict],
-    file_data: List[Dict],
+    file_data_list: List[Dict],
     step_instructions: List[Dict],
-    step_data: List[Dict],
-    output_dir: str
-) -> Dict[str, Path]:
-    """ä¿å­˜æ‰€æœ‰è¾“å‡ºæ–‡ä»¶"""
-    logger.info("\nðŸ’¾ ä¿å­˜åˆ†ç¦»çš„æ–‡ä»¶...")
-    
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # ä¿å­˜æ–‡ä»¶çº§æŒ‡ä»¤
-    file_instr_path = output_dir / "file_level_instructions.jsonl"
-    with open(file_instr_path, 'w', encoding='utf-8') as f:
-        for item in file_instructions:
-            f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    logger.info(f"âœ… {file_instr_path.name} ({len(file_instructions)} æ¡)")
-    
-    # ä¿å­˜æ–‡ä»¶çº§æ•°æ®
-    file_data_path = output_dir / "file_level_data.jsonl"
-    with open(file_data_path, 'w', encoding='utf-8') as f:
-        for item in file_data:
-            f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    logger.info(f"âœ… {file_data_path.name} ({len(file_data)} æ¡)")
-    
-    # ä¿å­˜æ­¥éª¤çº§æŒ‡ä»¤
-    step_instr_path = output_dir / "step_level_instructions.jsonl"
-    with open(step_instr_path, 'w', encoding='utf-8') as f:
-        for item in step_instructions:
-            f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    logger.info(f"âœ… {step_instr_path.name} ({len(step_instructions)} æ¡)")
-    
-    # ä¿å­˜æ­¥éª¤çº§æ•°æ®
-    step_data_path = output_dir / "step_level_data.jsonl"
-    with open(step_data_path, 'w', encoding='utf-8') as f:
-        for item in step_data:
-            f.write(json.dumps(item, ensure_ascii=False) + '\n')
-    logger.info(f"âœ… {step_data_path.name} ({len(step_data)} æ¡)")
-    
-    return {
-        "file_instructions": file_instr_path,
-        "file_data": file_data_path,
-        "step_instructions": step_instr_path,
-        "step_data": step_data_path
-    }
+    step_data_list: List[Dict],
+):
+    """保存4个分离的JSONL输出文件"""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    files = [
+        ("file_level_instructions_weighted.jsonl", file_instructions),
+        ("file_level_data.jsonl", file_data_list),
+        ("step_level_instructions.jsonl", step_instructions),
+        ("step_level_data.jsonl", step_data_list),
+    ]
+
+    for filename, data in files:
+        filepath = output_path / filename
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                for item in data:
+                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
+            logger.info(f"✓ Saved {len(data)} items to {filepath}")
+        except Exception as e:
+            logger.error(f"Error saving {filepath}: {e}")
 
 
 def show_samples(
     file_instructions: List[Dict],
-    file_data: List[Dict],
+    file_data_list: List[Dict],
     step_instructions: List[Dict],
-    step_data: List[Dict]
+    step_data_list: List[Dict],
+    num_samples: int = 2,
 ):
-    """å±•ç¤ºç”Ÿæˆçš„æ ·æœ¬æ•°æ®"""
+    """展示生成的数据样本（用于调试）"""
     logger.info("\n" + "=" * 80)
-    logger.info("ðŸ“Œ æ•°æ®æ ·æœ¬å±•ç¤º")
+    logger.info("SAMPLE: File-Level Instructions with Weights")
     logger.info("=" * 80)
-    
-    if file_instructions:
-        logger.info("\n[File #0] æ–‡ä»¶çº§æŒ‡ä»¤ä¸Žæ•°æ®ï¼š\n")
-        sample_file = file_instructions[0]
-        logger.info(f"  ðŸ“„ æ–‡ä»¶çº§æŒ‡ä»¤ï¼ˆå¸¦æƒé‡ï¼‰:")
-        logger.info(f"     instruction: {sample_file['instruction']}")
-        logger.info(f"     keywords: {sample_file['keywords'][:3]}... (å…±{len(sample_file['keywords'])}ä¸ª)")
-        logger.info(f"     actions: {sample_file['actions']}")
-        logger.info(f"     objects: {sample_file['objects'][:3]}")
-        
-        if file_data:
-            sample_data = file_data[0]
-            logger.info(f"\n  ðŸ“Š æ–‡ä»¶çº§æ•°æ®:")
-            logger.info(f"     test_app: {sample_data.get('test_app', 'N/A')}")
-            logger.info(f"     total_steps: {len(sample_data.get('steps', []))}")
-            logger.info(f"     file_id: {sample_data.get('file_id', 'N/A')}")
-    
-    if step_instructions and step_data:
-        logger.info(f"\n[Steps] æ­¥éª¤çº§æŒ‡ä»¤ä¸Žæ•°æ®ï¼ˆå‰2æ¡ï¼‰ï¼š\n")
-        for i in range(min(2, len(step_instructions))):
-            instr = step_instructions[i]
-            data = step_data[i]
-            logger.info(f"  Step #{i}:")
-            logger.info(f"    ðŸ“ æŒ‡ä»¤: {instr['instruction']}")
+    for item in file_instructions[:num_samples]:
+        logger.info(json.dumps(item, ensure_ascii=False, indent=2))
 
-            # æ˜¾ç¤ºä¸Šä¸‹æ–‡å­—æ®µ
-            context = instr.get('context', {})
-            if context and any(context.values()):
-                logger.info(f"    ðŸ“ ä¸Šä¸‹æ–‡å­—æ®µ:")
-                if context.get('database'):
-                    logger.info(f"      - æ•°æ®åº“: {context['database']}")
-                if context.get('method_variant'):
-                    logger.info(f"      - æ–¹æ³•å˜ä½“: {context['method_variant']}")
-                if context.get('object_id'):
-                    logger.info(f"      - å¯¹è±¡ID: {context['object_id']}")
-                if context.get('context_score'):
-                    logger.info(f"      - ä¸Šä¸‹æ–‡æƒé‡: {context['context_score']}")
-            
-            # æ˜¾ç¤ºå…³é”®è¯æƒé‡
-            weights = instr.get('keyword_weights', {})
-            if weights.get('keywords'):
-                logger.info(f"    ðŸ·ï¸  å…³é”®è¯æƒé‡:")
-                for keyword, weight in weights['keywords'][:4]:  # æ˜¾ç¤ºå‰4ä¸ªå…³é”®è¯
-                    logger.info(f"      - {keyword}: {weight}")
-                if len(weights['keywords']) > 4:
-                    logger.info(f"      ... åŠ{len(weights['keywords']) - 4}ä¸ªå…¶ä»–å…³é”®è¯")
-                logger.info(f"      å¹³å‡æƒé‡: {weights.get('avg_weight', 0):.2f}, æœ€é«˜æƒé‡: {weights.get('max_weight', 0):.1f}")
-            
-            logger.info(f"    ðŸ“Š æ­¥éª¤æ•°æ®: file_id={data.get('file_id', 'N/A')}, method={data.get('method', 'N/A')}, object={data.get('object', 'N/A')}")
+    logger.info("\n" + "=" * 80)
+    logger.info("SAMPLE: File-Level Data")
+    logger.info("=" * 80)
+    for item in file_data_list[:num_samples]:
+        logger.info(json.dumps(item, ensure_ascii=False, indent=2))
 
+    logger.info("\n" + "=" * 80)
+    logger.info("SAMPLE: Step-Level Instructions with Weights")
+    logger.info("=" * 80)
+    for item in step_instructions[:num_samples]:
+        logger.info(json.dumps(item, ensure_ascii=False, indent=2))
+
+    logger.info("\n" + "=" * 80)
+    logger.info("SAMPLE: Step-Level Data")
+    logger.info("=" * 80)
+    for item in step_data_list[:num_samples]:
+        logger.info(json.dumps(item, ensure_ascii=False, indent=2))
 
 
 def main():
-    logger.info("=" * 80)
-    logger.info("ðŸ“‹ ç»¼åˆæŒ‡ä»¤ä¸Žæ•°æ®ç”Ÿæˆ - è¾“å‡º4ä¸ªåˆ†ç¦»çš„JSONLæ–‡ä»¶ï¼ˆåŒ…å«å…³é”®è¯æƒé‡+ä¸Šä¸‹æ–‡å­—æ®µï¼‰")
-    logger.info("=" * 80)
-    logger.info("\nðŸŽ¯ åŠŸèƒ½è¯´æ˜Ž:")
-    logger.info("  æ–‡ä»¶çº§æŒ‡ä»¤: ç»“æž„åŒ–è¡¨è¾¾ + æƒé‡æ ‡æ³¨")
-    logger.info("  æ–‡ä»¶çº§æ•°æ®: åŽŸå§‹workflowæ•°æ®")
-    logger.info("  æ­¥éª¤çº§æŒ‡ä»¤: åŸºäºŽ(module,method)æ¨¡æ¿æ¸²æŸ“ + å…³é”®è¯æƒé‡ + ä¸Šä¸‹æ–‡å­—æ®µ")
-    logger.info("    â”œâ”€ åŠ¨ä½œè¯æƒé‡: 3.0ï¼ˆCreate/Updateç­‰ï¼‰")
-    logger.info("    â”œâ”€ å¯¹è±¡åæƒé‡: 2.0ï¼ˆMS Kabelç­‰ï¼‰")
-    logger.info("    â”œâ”€ æ•°æ®åº“æƒé‡: 1.8ï¼ˆElektraç­‰ï¼‰")
-    logger.info("    â”œâ”€ æ–¹æ³•å˜ä½“æƒé‡: 1.6ï¼ˆWith IDç­‰ï¼‰")
-    logger.info("    â””â”€ å¯¹è±¡IDæƒé‡: 1.4")
-    logger.info("  æ­¥éª¤çº§æ•°æ®: åŽŸå§‹stepæ•°æ®")
-    logger.info("=" * 80)
-    
-    # å‚æ•°
+    """主入口函数"""
     input_file = "data/processed/parsed_workflows.jsonl"
     output_dir = "data/processed"
-    
-    # æ£€æŸ¥è¾“å…¥æ–‡ä»¶
-    if not Path(input_file).exists():
-        logger.error(f"âŒ è¾“å…¥æ–‡ä»¶ä¸å­˜åœ¨: {input_file}")
-        return
-    
-    # åŠ è½½å·¥ä½œæµ
+
     workflows = load_parsed_workflows(input_file)
-    
-    # ç”ŸæˆæŒ‡ä»¤å’Œæ•°æ®
-    file_instructions, file_data, step_instructions, step_data = generate_all_instructions(workflows)
-    
-    # ä¿å­˜ä¸ºJSONLæ–‡ä»¶
-    output_files = save_instructions(file_instructions, file_data, step_instructions, step_data, output_dir)
-    
-    # æ˜¾ç¤ºæ ·æœ¬
-    show_samples(file_instructions, file_data, step_instructions, step_data)
-    
-    logger.info("\n" + "=" * 80)
-    logger.info("âœ… æŒ‡ä»¤ä¸Žæ•°æ®ç”Ÿæˆå®Œæˆï¼")
-    logger.info("âœ… ä½¿ç”¨ (module, method) æ¨¡æ¿ç”Ÿæˆæ­¥éª¤çº§æŒ‡ä»¤ï¼")
-    logger.info("âœ… å…³é”®è¯æƒé‡å·²æ·»åŠ åˆ° step_level_instructions.jsonlï¼")
-    logger.info("=" * 80)
-    logger.info(f"ðŸ“ è¾“å‡ºç›®å½•: {output_dir}")
-    logger.info(f"ðŸ“Š ç»Ÿè®¡:")
-    logger.info(f"   - æ–‡ä»¶æ•°: {len(file_instructions)}")
-    logger.info(f"   - æ­¥éª¤æ•°: {len(step_instructions)}")
-    logger.info(f"ðŸ“‹ è¾“å‡ºæ–‡ä»¶:")
-    for name, path in output_files.items():
-        logger.info(f"   âœ“ {path.name}")
-    logger.info("\nðŸ’¡ æƒé‡ä½“ç³»:")
-    logger.info(f"   - åŠ¨ä½œè¯ï¼ˆCreate/Updateç­‰ï¼‰: {KeywordWeights.CRITICAL}")
-    logger.info(f"   - å¯¹è±¡åï¼ˆMS Kabelç­‰ï¼‰: {KeywordWeights.HIGH}")
-    logger.info(f"   - æ•°æ®åº“ä¸Šä¸‹æ–‡: {KeywordWeights.CONTEXT_DB}")
-    logger.info(f"   - æ–¹æ³•å˜ä½“: {KeywordWeights.CONTEXT_VARIANT}")
-    logger.info(f"   - å¯¹è±¡ID: {KeywordWeights.CONTEXT_ID}")
-    logger.info(f"   - æµ‹è¯•æ•°æ®: {KeywordWeights.CONTEXT_DATA}")
-    logger.info("\nâœ¨ æ–°å¢žåŠŸèƒ½:")
-    logger.info("   - è‡ªåŠ¨æå–æ•°æ®åº“ã€æ–¹æ³•å˜ä½“ã€å¯¹è±¡IDç­‰ä¸Šä¸‹æ–‡å­—æ®µ")
-    logger.info("   - ç”Ÿæˆå¤šå±‚æ¬¡æŒ‡ä»¤ï¼ˆåŸºç¡€ + ä¸Šä¸‹æ–‡åŒ–ï¼‰")
-    logger.info("   - ç»“æž„åŒ–ä¸Šä¸‹æ–‡ä¿¡æ¯ç”¨äºŽRAGç³»ç»Ÿ")
-    logger.info("=" * 80)
+    if not workflows:
+        logger.error("No workflows loaded. Exiting.")
+        return
+
+    object_parser = ObjectNameParser()
+    for workflow in workflows:
+        steps = workflow.get('steps', [])
+        for step in steps:
+            obj = step.get('object', '')
+            if obj:
+                object_parser.add_object(obj)
+
+    logger.info(f"Scanned {len(object_parser.known_objects)} unique objects")
+
+    generator = WeightedInstructionGenerator(object_parser=object_parser)
+    file_instructions, file_data_list, step_instructions, step_data_list = generate_all_instructions(
+        workflows, generator
+    )
+
+    save_instructions(output_dir, file_instructions, file_data_list, step_instructions, step_data_list)
+
+    show_samples(file_instructions, file_data_list, step_instructions, step_data_list)
+
+    logger.info("\n✅ All done!")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-
